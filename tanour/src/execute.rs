@@ -1,22 +1,18 @@
-use crate::types::Address;
+use crate::action::{ActionParams, ActionType};
 use crate::error::Error;
-use crate::log_entry::LogEntry;
 use crate::functions::ImportResolver;
+use crate::log_entry::LogEntry;
 use crate::parser;
 use crate::provider::Provider;
 use crate::runtime::Runtime;
 use crate::schedule::Schedule;
 use crate::state::State;
 use crate::transaction::{Action, Transaction};
-use crate::action::{ActionParams, ActionType};
+use crate::types::Address;
 use crate::utils;
-use crate::wasm_cost::WasmCosts;
+use crate::size::Size;
 use log::{debug, trace};
-
-
-
-pub const IMPORT_MODULE_FN: &str = "seal0";
-pub const IMPORT_MODULE_MEMORY: &str = "env";
+use wasmer::{Exports, Function, ImportObject, Instance as WasmerInstance, Module, Val};
 
 
 #[derive(Debug, Clone)]
@@ -29,44 +25,10 @@ pub struct ResultData {
 
 pub fn execute(
     provider: &mut dyn Provider,
-    transaction: &Transaction,
+    action: &Action,
 ) -> Result<ResultData, Error> {
-    let params = match &transaction.action {
-        Action::Create(code, salt) => {
-            let new_address = utils::contract_address(&transaction.sender, &code, &salt);
 
-            ActionParams {
-                code_address: new_address.clone(),
-                address: new_address.clone(),
-                sender: transaction.sender.clone(),
-                origin: transaction.sender.clone(),
-                gas: transaction.gas,
-                gas_price: transaction.gas_price,
-                value: transaction.value,
-                action_type: ActionType::Create,
-                code: code.clone(),
-                args: transaction.args.clone(),
-                code_hash: None,
-            }
-        }
-        Action::Call(address) => {
-            let acc = provider.account_info(address)?;
-            let code = acc.code.clone();
-            ActionParams {
-                code_address: address.clone(),
-                address: address.clone(),
-                sender: transaction.sender.clone(),
-                origin: transaction.sender.clone(),
-                gas: transaction.gas,
-                gas_price: transaction.gas_price,
-                value: transaction.value,
-                action_type: ActionType::Call,
-                code: code,
-                args: transaction.args.clone(),
-                code_hash: None,
-            }
-        }
-    };
+    let module = compile(code, memory_limit)?;
 
     let mut schedule = Schedule::default();
     let wasm = WasmCosts::default();
@@ -76,7 +38,8 @@ pub fn execute(
     let loaded_module = wasmi::Module::from_parity_wasm_module(module)?;
     let instantiation_resolver = ImportResolver::with_limit(16, schedule.wasm());
 
-    let mut imports = wasmi::ImportsBuilder::new().with_resolver(IMPORT_MODULE_FN, &instantiation_resolver);
+    let mut imports =
+        wasmi::ImportsBuilder::new().with_resolver(IMPORT_MODULE_FN, &instantiation_resolver);
 
     imports.push_resolver(IMPORT_MODULE_MEMORY, &instantiation_resolver);
 
@@ -111,7 +74,6 @@ pub fn execute(
     // total_charge ∈ [0..2^64) if static_region ∈ [0..2^16)
     // qed
     assert!(runtime.schedule().wasm().initial_mem < 1 << 16);
-
 
     // TODO: fix me!!!!
     // runtime.charge(|s| initial_memory as u64 * s.wasm().initial_mem as u64)?;
@@ -177,4 +139,14 @@ pub fn execute(
     }
 }
 
+
+/// Compiles a given Wasm bytecode into a module.
+/// The given memory limit (in bytes) is used when memories are created.
+/// If no memory limit is passed, the resulting compiled module should
+/// not be used for execution.
+pub fn compile(code: &[u8], memory_limit: Option<i32>) -> VmResult<Module> {
+    let store = make_compile_time_store(memory_limit);
+    let module = Module::new(&store, code)?;
+    Ok(module)
+}
 

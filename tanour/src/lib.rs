@@ -11,7 +11,7 @@ mod runtime;
 mod schedule;
 mod state;
 mod utils;
-mod wasm_cost;
 mod action;
+mod instance;
 
 
