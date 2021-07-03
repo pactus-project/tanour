@@ -1,133 +1,83 @@
 use crate::types::{Address, Hash32};
-use snafu::Snafu;
-use wasmi::TrapKind;
+use thiserror::Error;
 
-#[derive(Debug, Clone, Snafu)]
+#[derive(Error, Debug)]
 pub enum Error {
-    #[snafu(display("Not supported"))]
-    NotSupported,
+    #[error("Error instantiating module: {}", msg)]
+    InstantiationError { msg: String },
 
-    #[snafu(display("Memory access violation"))]
-    MemoryAccessViolation,
+    #[error("Error compiling module: {}", msg)]
+    CompileError { msg: String },
 
-    #[snafu(display("WASM Internal error: {}", msg))]
-    Wasm { msg: String },
+    // #[error("Not supported")]
+    // NotSupported,
 
-    #[snafu(display("Storage read error"))]
-    StorageReadError,
+    // #[error("Memory access violation")]
+    // MemoryAccessViolation,
 
-    #[snafu(display("Storage update error"))]
-    StorageUpdateError,
+    // #[error("WASM Internal error: {}", msg)]
+    // Wasm { msg: String },
 
-    #[snafu(display("Attempt to suicide resulted in an error"))]
-    Suicide,
+    // #[error("Storage read error")]
+    // StorageReadError,
 
-    #[snafu(display("Return result"))]
-    Return,
+    // #[error("Storage update error")]
+    // StorageUpdateError,
 
-    #[snafu(display("Suicide result"))]
-    SuicideAbort,
+    // #[error("Attempt to suicide resulted in an error")]
+    // Suicide,
 
-    #[snafu(display("Invalid gas state"))]
-    InvalidGasState,
+    // #[error("Return result")]
+    // Return,
 
-    #[snafu(display("Balance query resulted in an error"))]
-    BalanceQueryError,
+    // #[error("Suicide result")]
+    // SuicideAbort,
 
-    #[snafu(display("Memory allocation failed (OOM)"))]
-    AllocationFailed,
+    // #[error("Invalid gas state")]
+    // InvalidGasState,
 
-    #[snafu(display("Invocation resulted in gas limit violated"))]
-    GasLimit,
+    // #[error("Balance query resulted in an error")]
+    // BalanceQueryError,
 
-    #[snafu(display("Unknown runtime function invoked"))]
-    Unknown,
+    // #[error("Memory allocation failed (OOM)")]
+    // AllocationFailed,
 
-    #[snafu(display("String encoding is bad utf-8 sequence"))]
-    BadUtf8,
+    // #[error("Invocation resulted in gas limit violated")]
+    // GasLimit,
 
-    #[snafu(display("Error occurred while logging an event"))]
-    Log,
+    // #[error("Unknown runtime function invoked")]
+    // Unknown,
 
-    #[snafu(display("Error: {}", msg))]
-    Other { msg: String },
+    // #[error("String encoding is bad utf-8 sequence")]
+    // BadUtf8,
 
-    #[snafu(display("Unreachable instruction encountered"))]
-    Unreachable,
+    // #[error("Error occurred while logging an event")]
+    // Log,
 
-    #[snafu(display("Invalid virtual call"))]
-    InvalidVirtualCall,
+    // #[error("Error: {}", msg)]
+    // Other { msg: String },
 
-    #[snafu(display("Division by zero"))]
-    DivisionByZero,
+    // #[error("Unreachable instruction encountered")]
+    // Unreachable,
 
-    #[snafu(display("Invalid conversion to integer"))]
-    InvalidConversionToInt,
+    // #[error("Invalid virtual call")]
+    // InvalidVirtualCall,
 
-    #[snafu(display("Stack overflow"))]
-    StackOverflow,
+    // #[error("Division by zero")]
+    // DivisionByZero,
 
-    #[snafu(display("Panic: {}", msg))]
-    Panic { msg: String },
+    // #[error("Invalid conversion to integer")]
+    // InvalidConversionToInt,
 
-    #[snafu(display("Account not found"))]
-    AccountNotFound,
+    // #[error("Stack overflow")]
+    // StackOverflow,
 
-    #[snafu(display("Storage key not found"))]
-    KeyNotFound,
+    // #[error("Panic: {}", msg)]
+    // Panic { msg: String },
+
+    // #[error("Account not found")]
+    // AccountNotFound,
+
+    // #[error("Storage key not found")]
+    // KeyNotFound,
 }
-
-impl From<wasmi::Trap> for Error {
-    fn from(trap: wasmi::Trap) -> Self {
-        match *trap.kind() {
-            TrapKind::Unreachable => Error::Unreachable,
-            TrapKind::MemoryAccessOutOfBounds => Error::MemoryAccessViolation,
-            TrapKind::TableAccessOutOfBounds | TrapKind::ElemUninitialized => {
-                Error::InvalidVirtualCall
-            }
-            TrapKind::DivisionByZero => Error::DivisionByZero,
-            TrapKind::InvalidConversionToInt => Error::InvalidConversionToInt,
-            TrapKind::UnexpectedSignature => Error::InvalidVirtualCall,
-            TrapKind::StackOverflow => Error::StackOverflow,
-            TrapKind::Host(_) => Error::Other {
-                msg: "Host error".to_string(),
-            },
-        }
-    }
-}
-
-impl From<wasmi::Error> for Error {
-    fn from(err: wasmi::Error) -> Self {
-        match err {
-            wasmi::Error::Validation(msg) => Error::Wasm {
-                msg: format!("Wasm validation error: {}", msg),
-            },
-            wasmi::Error::Instantiation(msg) => Error::Wasm {
-                msg: format!("Wasm Instantiation error: {}", msg),
-            },
-            wasmi::Error::Function(msg) => Error::Wasm {
-                msg: format!("Wasm Function error: {}", msg),
-            },
-            wasmi::Error::Table(msg) => Error::Wasm {
-                msg: format!("Wasm Table error: {}", msg),
-            },
-            wasmi::Error::Memory(msg) => Error::Wasm {
-                msg: format!("Wasm Memory error: {}", msg),
-            },
-            wasmi::Error::Global(msg) => Error::Wasm {
-                msg: format!("Wasm Global error: {}", msg),
-            },
-            wasmi::Error::Value(msg) => Error::Wasm {
-                msg: format!("Wasm Value error: {}", msg),
-            },
-            wasmi::Error::Trap(k) => Error::Wasm {
-                msg: format!("Wasm Trap error: {}", k),
-            },
-            wasmi::Error::Host(_) => Error::Wasm {
-                msg: format!("Wasm Host error."),
-            },
-        }
-    }
-}
-
-impl wasmi::HostError for Error {}

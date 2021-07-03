@@ -7,8 +7,10 @@ pub struct Action {
     pub code_address: Address,
     /// Hash of currently executed code.
     pub caller: Address,
-    /// Gas price.
+    /// Gas limit.
     pub gas_limit: u64,
+    /// Memory limit
+    pub memory_limit: u64,
     /// Transaction value.
     pub value: u64,
     /// Code being executed.
