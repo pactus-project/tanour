@@ -7,3 +7,8 @@ pub trait Provider {
         -> Result<(), Error>;
     fn query(&self, query: &Bytes) -> Result<Bytes, Error>;
 }
+
+
+#[cfg(test)]
+#[path = "./provider_test.rs"]
+pub mod provider_test;

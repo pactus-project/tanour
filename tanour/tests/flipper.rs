@@ -4,7 +4,7 @@ mod provider;
 use crate::provider::Blockchain;
 use log::info;
 use tanour::execute::execute;
-use tanour::transaction::Transaction;
+use tanour::action::Action;
 use tanour::types::Hash32;
 
 #[test]

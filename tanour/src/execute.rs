@@ -59,6 +59,10 @@ pub fn compile(code: &[u8], memory_limit: u64) -> crate::Result<Module> {
             msg: format!("{:?}", original),
         },
     )?;
-;
+
     Ok(module)
 }
+
+#[cfg(test)]
+#[path = "./execute_test.rs"]
+mod execute_test;
