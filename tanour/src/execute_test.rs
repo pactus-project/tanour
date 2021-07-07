@@ -7,7 +7,15 @@ mod tests {
 
     #[test]
     fn test_instantiate() {
-        let sum_wat = r#"(module (memory 7) (export "memory" (memory 0)))"#;
+        let sum_wat = r#"(module
+            (type $t0 (func))
+            (type $t1 (func (result i32)))
+            (export "memory" (memory 0))
+            (func $deploy (type $t0))
+            (func $call (type $t1) (result i32)
+              i32.const 3)
+            (export "deploy" (func $deploy))
+            (export "call" (func $call)))"#;
 
         let code = wat::parse_str(sum_wat).unwrap();
         let args = hex::decode("00").unwrap();
