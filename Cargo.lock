@@ -845,6 +845,7 @@ dependencies = [
  "byteorder",
  "hex",
  "log",
+ "loupe",
  "simple_logger",
  "thiserror",
  "wasmer",
@@ -973,6 +974,7 @@ dependencies = [
  "wasmer-engine-universal",
  "wasmer-types",
  "wasmer-vm",
+ "wat",
  "winapi",
 ]
 

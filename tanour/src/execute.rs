@@ -1,5 +1,6 @@
 use crate::action::Action;
 use crate::error::Error;
+use crate::memory;
 use crate::provider::Provider;
 use crate::types::Address;
 use crate::utils;
@@ -26,6 +27,8 @@ pub fn execute(provider: &mut dyn Provider, action: &Action) -> crate::Result<()
     let mut import_obj = ImportObject::new();
     let mut env_imports = Exports::new();
 
+    import_obj.register("env", env_imports);
+
     let wasmer_instance = Box::from(WasmerInstance::new(&module, &import_obj).map_err(
         |original| Error::InstantiationError {
             msg: format!("{:?}", original),
@@ -39,26 +42,27 @@ pub fn execute(provider: &mut dyn Provider, action: &Action) -> crate::Result<()
 /// The given memory limit (in bytes) is used when memories are created.
 pub fn compile(code: &[u8], memory_limit: u64) -> crate::Result<Module> {
     let gas_limit = 0;
+    let mut config;
 
     #[cfg(feature = "cranelift")]
-    let store = {
-        let mut config = Cranelift::default();
-        let engine = Universal::new(config).engine();
-        make_store_with_engine(&engine, memory_limit)
+    {
+        config = Cranelift::default();
     };
 
     #[cfg(not(feature = "cranelift"))]
-    let store = {
-        let mut config = Singlepass::default();
-        let engine = Universal::new(config).engine();
-        Store::new(&engine)
+    {
+        config = Singlepass::default();
     };
 
-    let module = Module::new(&store, code).map_err(
-        |original| Error::CompileError {
-            msg: format!("{:?}", original),
-        },
-    )?;
+    let engine = Universal::new(config).engine();
+    let base = BaseTunables::for_target(&Target::default());
+    let tunables =
+        memory::LimitingTunables::new(base, memory::limit_to_pages(memory_limit as usize));
+    let store = Store::new_with_tunables(&engine, tunables);
+
+    let module = Module::new(&store, code).map_err(|original| Error::CompileError {
+        msg: format!("{:?}", original),
+    })?;
 
     Ok(module)
 }
