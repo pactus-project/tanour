@@ -1,20 +1,42 @@
 use crate::types::{Address, Bytes};
 
+#[derive(Debug)]
+pub enum CallMethod {
+    /// Deploy creates and deploy a new contract.
+    Deploy,
+    /// Execute call the execute method
+    Execute,
+}
+
 /// Action parameters
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Action {
-    /// Address of currently executed code.
-    pub code_address: Address,
     /// Hash of currently executed code.
     pub caller: Address,
-    /// Gas limit.
-    pub gas_limit: u64,
-    /// Memory limit
-    pub memory_limit: u64,
     /// Transaction value.
     pub value: u64,
-    /// Code being executed.
-    pub code: Bytes,
+    /// Gas limit.
+    pub gas_limit: u64,
+    /// Method to be called
+    pub method: CallMethod,
     /// Arguments
     pub args: Bytes,
+}
+
+impl Action {
+    pub fn new(
+        caller: Address,
+        value: u64,
+        gas_limit: u64,
+        method: CallMethod,
+        args: Bytes,
+    ) -> Self {
+        Action {
+            caller,
+            value,
+            gas_limit,
+            method,
+            args,
+        }
+    }
 }

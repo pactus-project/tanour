@@ -3,7 +3,7 @@ mod provider;
 
 use crate::provider::Blockchain;
 use log::info;
-use tanour::execute::execute;
+use tanour::instance::execute;
 use tanour::action::Action;
 use tanour::types::Hash32;
 

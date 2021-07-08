@@ -9,6 +9,9 @@ pub enum Error {
     #[error("Error compiling module: {}", msg)]
     CompileError { msg: String },
 
+    #[error("Error executing {}: {}", func_name, msg)]
+    RuntimeError { func_name: String, msg: String },
+
     // #[error("Not supported")]
     // NotSupported,
 
@@ -81,3 +84,4 @@ pub enum Error {
     // #[error("Storage key not found")]
     // KeyNotFound,
 }
+pub type Result<T> = core::result::Result<T, Error>;

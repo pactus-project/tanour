@@ -1,5 +1,5 @@
 pub mod error;
-pub mod execute;
+pub mod instance;
 pub mod provider;
 pub mod types;
 pub mod action;
@@ -7,6 +7,6 @@ pub mod action;
 mod state;
 mod utils;
 mod memory;
+mod compile;
 
-pub type Result<T> = core::result::Result<T, error::Error>;
 
