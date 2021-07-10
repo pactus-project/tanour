@@ -1,9 +1,13 @@
+use core::slice;
+use std::convert::TryFrom;
+
 use crate::action::Action;
 use crate::error::{Error, Result};
 use crate::provider::Provider;
 use crate::types::{Address, Bytes};
 use crate::utils;
 use crate::{compile, memory};
+use byteorder::WriteBytesExt;
 use log::{debug, trace};
 #[cfg(feature = "cranelift")]
 use wasmer::Cranelift;
@@ -13,7 +17,7 @@ use wasmer::{
     wasmparser::Operator, BaseTunables, CompilerConfig, Engine, Pages, Store, Target, Universal,
     WASM_PAGE_SIZE,
 };
-use wasmer::{Exports, Function, ImportObject, Instance as WasmerInstance, Module, Val};
+use wasmer::{Exports, Function, ImportObject, Module, Val};
 
 #[derive(Debug, Clone)]
 pub struct ResultData {
@@ -25,7 +29,7 @@ pub struct Instance {
     /// Address of the code.
     address: Address,
     /// Wasmer instance of the code
-    instance: WasmerInstance,
+    instance: wasmer::Instance,
 }
 
 impl Instance {
@@ -37,7 +41,7 @@ impl Instance {
 
         import_obj.register("env", env_imports);
 
-        let instance = WasmerInstance::new(&module, &import_obj).map_err(|original| {
+        let instance = wasmer::Instance::new(&module, &import_obj).map_err(|original| {
             Error::InstantiationError {
                 msg: format!("{:?}", original),
             }
@@ -80,52 +84,9 @@ impl Instance {
     }
 
     /// Calls a function with the given arguments.
-    /// The exported function must return exactly one result (an offset to the result Region).
-    fn call_raw(&self, name: &str, args: &[&[u8]]) -> Result<Vec<u8>> {
-        let mut arg_region_ptrs = Vec::<Val>::with_capacity(args.len());
-        // for arg in args {
-        //     let region_ptr = self.allocate(arg.len())?;
-        //     instance.write_memory(region_ptr, arg)?;
-        //     arg_region_ptrs.push(region_ptr.into());
-        // }
-        let result = self.call_function1(name, &arg_region_ptrs)?;
-        // let res_region_ptr = ref_to_u32(&result)?;
-        // let data = instance.read_memory(res_region_ptr, result_max_length)?;
-        // // free return value in wasm (arguments were freed in wasm code)
-        // instance.deallocate(res_region_ptr)?;
-        //Ok(data)
-        Ok(Vec::new())
-    }
+    fn call_function(&self, name: &str, args: &[&[u8]]) -> Result<&[u8]> {
+        let vals = Vec::<Val>::with_capacity(args.len());
 
-    /// Calls a function exported by the instance.
-    /// The function is expected to return no value. Otherwise this calls errors.
-    fn call_function0(&self, name: &str, args: &[Val]) -> Result<()> {
-        let result = self.call_function(name, args)?;
-        let expected = 0;
-        let actual = result.len();
-        if actual != expected {
-            // return Err(Error::result_mismatch(name, expected, actual));
-        }
-        Ok(())
-    }
-
-    /// Calls a function exported by the instance.
-    /// The function is expected to return one value. Otherwise this calls errors.
-    fn call_function1(&self, name: &str, args: &[Val]) -> Result<Val> {
-        let result = self.call_function(name, args)?;
-        let expected = 1;
-        let actual = result.len();
-        if actual != expected {
-            // return Err(Error::result_mismatch(name, expected, actual));
-        }
-        Ok(result[0].clone())
-    }
-
-    /// Calls a function with the given name and arguments.
-    /// The number of return values is variable and controlled by the guest.
-    /// Usually we expect 0 or 1 return values.
-    fn call_function(&self, name: &str, args: &[Val]) -> Result<Box<[Val]>> {
-        // Clone function before calling it to avoid dead locks
         let func = self
             .instance
             .exports
@@ -135,10 +96,14 @@ impl Instance {
                 msg: format!("{}", original),
             })?;
 
-        func.call(args).map_err(|original| Error::RuntimeError {
+        let result = func.call(&vals).map_err(|original| Error::RuntimeError {
             func_name: name.to_owned(),
             msg: format!("{}", original),
-        })
+        })?;
+
+        print!("result: {:?}", result);
+
+        Ok(&[0])
     }
 }
 

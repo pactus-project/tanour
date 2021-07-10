@@ -28,7 +28,7 @@ mod tests {
         let action = Action::new(caller, 1000000, 1, CallMethod::Deploy, args.clone());
         let mut p = ProviderMock {};
         let instance = Instance::new(code_address, &code, 1000000).unwrap();
-        let res = instance.call_raw("execute", &[&args]).unwrap();
+        let res = instance.call_function("execute", &[&args]).unwrap();
         print!("{:?}", res);
     }
 }
