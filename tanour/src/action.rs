@@ -1,36 +1,42 @@
-use crate::types::{Address, Bytes, Hash32};
+use crate::types::{Address, Bytes};
 
-/// The type of the instruction.
-#[derive(Debug, PartialEq, Clone)]
-pub enum ActionType {
-    Create,
-    Call,
+#[derive(Debug)]
+pub enum CallMethod {
+    /// Deploy creates and deploy a new contract.
+    Deploy,
+    /// Execute call the execute method
+    Execute,
 }
 
-/// Action (call/create) input params. Everything else should be specified in Externalities.
-#[derive(Clone, Debug)]
-pub struct ActionParams {
-    /// Address of currently executed code.
-    pub code_address: Address,
+/// Action parameters
+#[derive(Debug)]
+pub struct Action {
     /// Hash of currently executed code.
-    pub code_hash: Option<Hash32>,
-    /// Receive address. Usually equal to code_address,
-    /// except when called using CALLCODE.
-    pub address: Address,
-    /// Sender of current part of the transaction.
-    pub sender: Address,
-    /// Transaction initiator.
-    pub origin: Address,
-    /// Gas paid up front for transaction execution
-    pub gas: u64,
-    /// Gas price.
-    pub gas_price: u64,
+    pub caller: Address,
     /// Transaction value.
     pub value: u64,
-    /// Code being executed.
-    pub code: Bytes,
+    /// Gas limit.
+    pub gas_limit: u64,
+    /// Method to be called
+    pub method: CallMethod,
     /// Arguments
     pub args: Bytes,
-    /// Type of action (e.g. CALL, CREATE, etc.)
-    pub action_type: ActionType,
+}
+
+impl Action {
+    pub fn new(
+        caller: Address,
+        value: u64,
+        gas_limit: u64,
+        method: CallMethod,
+        args: Bytes,
+    ) -> Self {
+        Action {
+            caller,
+            value,
+            gas_limit,
+            method,
+            args,
+        }
+    }
 }

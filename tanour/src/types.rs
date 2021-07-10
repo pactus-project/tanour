@@ -1,5 +1,3 @@
-use primitive_types::{H160, H256};
-
-pub type Address = H160;
-pub type Hash32 = H256;
+pub type Address = [u8; 20];
+pub type Hash32 = [u8; 32];
 pub type Bytes = Vec<u8>;
