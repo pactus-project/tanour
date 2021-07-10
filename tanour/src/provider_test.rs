@@ -6,20 +6,20 @@ use crate::types::{Address, Bytes};
 pub struct ProviderMock {}
 
 impl Provider for ProviderMock {
-    fn read_storage(&self, address: &Address, offset: i64) -> Result<Bytes, Error> {
-        Err(Error::CompileError { msg: "".to_owned() })
+    fn read_storage(&self, _address: &Address, _offset: i64) -> Result<Bytes, Error> {
+        Err(Error::CompileError { msg: "unimplemented".to_owned() })
     }
 
     fn write_storage(
         &mut self,
-        address: &Address,
-        offset: i64,
-        value: &Bytes,
+        _address: &Address,
+        _offset: i64,
+        _value: &Bytes,
     ) -> Result<(), Error> {
-        Err(Error::CompileError { msg: "".to_owned() })
+        Err(Error::CompileError { msg: "unimplemented".to_owned() })
     }
 
-    fn query(&self, query: &Bytes) -> Result<Bytes, Error> {
-        Err(Error::CompileError { msg: "".to_owned() })
+    fn query(&self, _query: &Bytes) -> Result<Bytes, Error> {
+        Err(Error::CompileError { msg: "unimplemented".to_owned() })
     }
 }

@@ -1,23 +1,15 @@
-use core::slice;
-use std::convert::TryFrom;
-
 use crate::action::Action;
 use crate::error::{Error, Result};
+use crate::memory;
 use crate::provider::Provider;
 use crate::types::{Address, Bytes};
-use crate::utils;
-use crate::{compile, memory};
-use byteorder::WriteBytesExt;
-use log::{debug, trace};
+use log::debug;
 #[cfg(feature = "cranelift")]
 use wasmer::Cranelift;
 #[cfg(not(feature = "cranelift"))]
-use wasmer::Singlepass;
 use wasmer::{
-    wasmparser::Operator, BaseTunables, CompilerConfig, Engine, Pages, Store, Target, Universal,
-    WASM_PAGE_SIZE,
+    BaseTunables, Exports, ImportObject, Module, Singlepass, Store, Target, Universal, Val,
 };
-use wasmer::{Exports, Function, ImportObject, Module, Val};
 
 #[derive(Debug, Clone)]
 pub struct ResultData {
@@ -101,7 +93,7 @@ impl Instance {
             msg: format!("{}", original),
         })?;
 
-        print!("result: {:?}", result);
+        debug!("result: {:?}", result);
 
         Ok(&[0])
     }

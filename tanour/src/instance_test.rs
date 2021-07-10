@@ -2,12 +2,10 @@
 mod tests {
     use crate::{
         action::{Action, CallMethod},
-        instance::{self, Instance},
+        instance::Instance,
         provider::provider_test::ProviderMock,
-        provider::Provider,
         utils,
     };
-    use wasmer::wat2wasm;
 
     #[test]
     fn test_instantiate() {

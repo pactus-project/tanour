@@ -7,6 +7,5 @@ pub mod action;
 mod state;
 mod utils;
 mod memory;
-mod compile;
 
 
