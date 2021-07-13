@@ -1,8 +1,9 @@
 use crate::action::Action;
+use crate::compile;
 use crate::error::{Error, Result};
-use crate::memory;
 use crate::provider::Provider;
 use crate::types::{Address, Bytes};
+use crate::{memory, storage::Storage};
 use log::debug;
 #[cfg(feature = "cranelift")]
 use wasmer::Cranelift;
@@ -17,16 +18,18 @@ pub struct ResultData {
     pub data: Vec<u8>,
 }
 
-pub struct Instance {
+pub struct Contract {
     /// Address of the code.
     address: Address,
     /// Wasmer instance of the code
     instance: wasmer::Instance,
+    // storage handler of the contract
+    storage: Storage,
 }
 
-impl Instance {
-    pub fn new(address: Address, code: &Bytes, memory_limit: u64) -> Result<Self> {
-        let module = Instance::compile(&code, memory_limit)?;
+impl Contract {
+    pub fn instantiate(address: Address, code: &Bytes, memory_limit: u64) -> Result<Self> {
+        let module = compile::compile(&code, memory_limit)?;
 
         let mut import_obj = ImportObject::new();
         let mut env_imports = Exports::new();
@@ -39,39 +42,18 @@ impl Instance {
             }
         })?;
 
-        Ok(Instance { address, instance })
+        let storage = Storage::new();
+
+        Ok(Contract {
+            address,
+            instance,
+            storage,
+        })
     }
 
-    /// Compiles a given Wasm bytecode into a module.
-    /// The given memory limit (in bytes) is used when memories are created.
-    fn compile(code: &[u8], memory_limit: u64) -> Result<Module> {
-        let gas_limit = 0;
-        let mut config;
 
-        #[cfg(feature = "cranelift")]
-        {
-            config = Cranelift::default();
-        };
 
-        #[cfg(not(feature = "cranelift"))]
-        {
-            config = Singlepass::default();
-        };
-
-        let engine = Universal::new(config).engine();
-        let base = BaseTunables::for_target(&Target::default());
-        let tunables =
-            memory::LimitingTunables::new(base, memory::limit_to_pages(memory_limit as usize));
-        let store = Store::new_with_tunables(&engine, tunables);
-
-        let module = Module::new(&store, code).map_err(|original| Error::CompileError {
-            msg: format!("{}", original),
-        })?;
-
-        Ok(module)
-    }
-
-    pub fn execute(&self, provider: &mut dyn Provider, action: Action) -> Result<()> {
+    pub fn execute(&self, _provider: &mut dyn Provider, _action: Action) -> Result<()> {
         Ok(())
     }
 
@@ -100,5 +82,5 @@ impl Instance {
 }
 
 #[cfg(test)]
-#[path = "./instance_test.rs"]
+#[path = "./contract_test.rs"]
 mod instance_test;

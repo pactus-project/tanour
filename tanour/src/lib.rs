@@ -1,11 +1,12 @@
 pub mod error;
-pub mod instance;
+pub mod contract;
 pub mod provider;
 pub mod types;
 pub mod action;
 
-mod state;
+mod compile;
 mod utils;
 mod memory;
+mod storage;
 
 
