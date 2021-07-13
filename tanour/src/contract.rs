@@ -52,7 +52,7 @@ where
             }
         })?;
 
-        let storage = Storage::new(provider);
+        let storage = Storage::new(address, provider);
 
         Ok(Contract {
             address,

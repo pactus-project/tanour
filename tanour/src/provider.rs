@@ -1,17 +1,15 @@
-use crate::storage;
 use crate::{
-    error::Error,
+    error::{Error, Result},
     types::{Address, Bytes},
 };
 
 pub trait StorageProvider {
-    fn read_storage(&self, address: &Address, offset: i64) -> Result<Bytes, Error>;
-    fn write_storage(&mut self, address: &Address, offset: i64, value: &Bytes)
-        -> Result<(), Error>;
+    fn read_storage(&self, address: &Address, offset: i64) -> Result<Bytes>;
+    fn write_storage(&mut self, address: &Address, offset: i64, value: &Bytes) -> Result<()>;
 }
 
 pub trait BlockchainProvider {
-    fn query(&self, query: &Bytes) -> Result<Bytes, Error>;
+    fn query(&self, query: &Bytes) -> Result<Bytes>;
 }
 
 pub trait Provider: BlockchainProvider + StorageProvider + Copy {}
