@@ -1,6 +1,6 @@
 # Tanour
 
-Tanour is a stateless VM based on [parity-wasm](https://github.com/paritytech/parity-wasm) for blockchains.
+Tanour is a stateless WebAssembly executor for blockchains based on [Wasmer](https://wasmer.io/).
 
 
 ## Building
