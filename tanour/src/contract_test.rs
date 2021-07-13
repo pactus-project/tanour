@@ -24,8 +24,8 @@ mod tests {
         let code_address = utils::address_from_hex("deadbeef00000000000000000000000000000000");
 
         let action = Action::new(caller, 1000000, 1, CallMethod::Deploy, args.clone());
-        let mut p = ProviderMock {};
-        let contract = Contract::instantiate(code_address, &code, 1000000).unwrap();
+        let provider = ProviderMock {};
+        let contract = Contract::instantiate(provider, code_address, &code, 1000000).unwrap();
         let res = contract.call_function("execute", &[&args]).unwrap();
         print!("{:?}", res);
     }

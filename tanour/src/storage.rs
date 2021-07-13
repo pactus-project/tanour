@@ -1,4 +1,4 @@
-use crate::types::Bytes;
+use crate::{provider::StorageProvider, types::Bytes};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -10,14 +10,19 @@ struct ChunkData {
 }
 
 #[derive(Debug)]
-pub struct Storage {
+pub struct Storage<P> {
     chunks: HashMap<i32, ChunkData>,
+    provider: P,
 }
 
-impl Storage {
-    pub fn new() -> Storage {
+impl<P> Storage<P>
+where
+    P: StorageProvider,
+{
+    pub fn new(provider: P) -> Self {
         Storage {
             chunks: HashMap::new(),
+            provider,
         }
     }
 }

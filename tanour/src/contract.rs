@@ -18,17 +18,27 @@ pub struct ResultData {
     pub data: Vec<u8>,
 }
 
-pub struct Contract {
+pub struct Contract<P> {
     /// Address of the code.
     address: Address,
     /// Wasmer instance of the code
     instance: wasmer::Instance,
-    // storage handler of the contract
-    storage: Storage,
+    /// storage handler of the contract
+    storage: Storage<P>,
+    ///
+    provider: P,
 }
 
-impl Contract {
-    pub fn instantiate(address: Address, code: &Bytes, memory_limit: u64) -> Result<Self> {
+impl<P> Contract<P>
+where
+    P: Provider,
+{
+    pub fn instantiate(
+        provider: P,
+        address: Address,
+        code: &Bytes,
+        memory_limit: u64,
+    ) -> Result<Self> {
         let module = compile::compile(&code, memory_limit)?;
 
         let mut import_obj = ImportObject::new();
@@ -42,18 +52,17 @@ impl Contract {
             }
         })?;
 
-        let storage = Storage::new();
+        let storage = Storage::new(provider);
 
         Ok(Contract {
             address,
             instance,
             storage,
+            provider,
         })
     }
 
-
-
-    pub fn execute(&self, _provider: &mut dyn Provider, _action: Action) -> Result<()> {
+    pub fn execute(&self, _action: Action) -> Result<()> {
         Ok(())
     }
 
