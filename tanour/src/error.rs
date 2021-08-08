@@ -10,5 +10,8 @@ pub enum Error {
 
     #[error("Error executing {}: {}", func_name, msg)]
     RuntimeError { func_name: String, msg: String },
+
+    #[error("Storage error: {}", msg)]
+    StorageError { msg: String },
 }
 pub type Result<T> = core::result::Result<T, Error>;

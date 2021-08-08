@@ -12,6 +12,8 @@ use wasmer::{
     BaseTunables, Exports, ImportObject, Module, Singlepass, Store, Target, Universal, Val,
 };
 
+const PAGE_SIZE: usize = 1024 * 1024; // 1 kilobyte
+
 #[derive(Debug, Clone)]
 pub struct ResultData {
     pub gas_left: u64,
@@ -25,8 +27,8 @@ pub struct Contract<P> {
     instance: wasmer::Instance,
     /// storage handler of the contract
     storage: Storage<P>,
-    ///
-    provider: P,
+    //
+    //  provider: P,
 }
 
 impl<P> Contract<P>
@@ -52,13 +54,13 @@ where
             }
         })?;
 
-        let storage = Storage::new(address, provider);
+        let storage = Storage::new(provider, address, PAGE_SIZE);
 
         Ok(Contract {
             address,
             instance,
             storage,
-            provider,
+            //  provider,
         })
     }
 

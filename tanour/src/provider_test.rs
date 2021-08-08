@@ -3,29 +3,39 @@ use crate::error::Error;
 use crate::provider::*;
 use crate::types::{Address, Bytes};
 
-#[derive(Debug, Copy, Clone)]
-pub struct ProviderMock {}
+#[derive(Debug, Clone)]
+pub struct ProviderMock {
+    storage: Bytes,
+}
 
-impl StorageProvider for ProviderMock {
-    fn read_storage(&self, _address: &Address, _offset: i64) -> Result<Bytes> {
-        Err(Error::CompileError {
-            msg: "unimplemented".to_owned(),
-        })
-    }
-
-    fn write_storage(
-        &mut self,
-        _address: &Address,
-        _offset: i64,
-        _value: &Bytes,
-    ) -> Result<()> {
-        Err(Error::CompileError {
-            msg: "unimplemented".to_owned(),
-        })
+impl ProviderMock {
+    pub fn new(storage_size: usize) -> Self {
+        let mut storage= Vec::with_capacity(storage_size);
+        for _ in 0..storage_size {
+            storage.push(0);
+        }
+        ProviderMock {
+            storage,
+        }
     }
 }
 
-impl BlockchainProvider for ProviderMock {
+impl Provider for ProviderMock {
+    fn read_storage(&self, _address: &Address, offset: usize, length: usize) -> Result<Bytes> {
+        if length + offset > self.storage.len() {
+            return Err(Error::StorageError{msg: "Invalid offset".to_owned()});
+        }
+
+        let data = &self.storage[offset..offset+length];
+        Ok(data.to_vec())
+    }
+
+    fn write_storage(&mut self, _address: &Address, _offset: usize, _value: &Bytes) -> Result<()> {
+        Err(Error::CompileError {
+            msg: "unimplemented".to_owned(),
+        })
+    }
+
     fn query(&self, _query: &Bytes) -> Result<Bytes> {
         Err(Error::CompileError {
             msg: "unimplemented".to_owned(),
