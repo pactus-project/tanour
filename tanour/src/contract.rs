@@ -1,9 +1,9 @@
 use crate::action::Action;
 use crate::compile;
 use crate::error::{Error, Result};
-use crate::provider::Provider;
+use crate::provider_api::ProviderAPI;
 use crate::types::{Address, Bytes};
-use crate::{memory, storage::Storage};
+use crate::{memory, state::State};
 use log::debug;
 #[cfg(feature = "cranelift")]
 use wasmer::Cranelift;
@@ -12,23 +12,33 @@ use wasmer::{
     BaseTunables, Exports, ImportObject, Module, Singlepass, Store, Target, Universal, Val,
 };
 
+const PAGE_SIZE: usize = 1024 * 1024; // 1 kilobyte
+
 #[derive(Debug, Clone)]
 pub struct ResultData {
     pub gas_left: u64,
     pub data: Vec<u8>,
 }
 
-pub struct Contract {
+pub struct Contract<P> {
     /// Address of the code.
     address: Address,
     /// Wasmer instance of the code
     instance: wasmer::Instance,
-    // storage handler of the contract
-    storage: Storage,
+    /// State of the contract
+    state: State<P>,
 }
 
-impl Contract {
-    pub fn instantiate(address: Address, code: &Bytes, memory_limit: u64) -> Result<Self> {
+impl<P> Contract<P>
+where
+    P: ProviderAPI,
+{
+    pub fn instantiate(
+        provider: P,
+        address: Address,
+        code: &Bytes,
+        memory_limit: u64,
+    ) -> Result<Self> {
         let module = compile::compile(&code, memory_limit)?;
 
         let mut import_obj = ImportObject::new();
@@ -42,23 +52,26 @@ impl Contract {
             }
         })?;
 
-        let storage = Storage::new();
+        let state = State::new(provider, address, PAGE_SIZE);
 
         Ok(Contract {
             address,
             instance,
-            storage,
+            state,
         })
     }
 
-
-
-    pub fn execute(&self, _provider: &mut dyn Provider, _action: Action) -> Result<()> {
+    pub fn execute(&self, _action: Action) -> Result<()> {
         Ok(())
     }
 
+    pub fn run_execute(&self, args: &[u8]) -> Result<&[u8]> {
+        //self.state.make_readonly(false);
+        self.call_function("execute", args)
+    }
+
     /// Calls a function with the given arguments.
-    fn call_function(&self, name: &str, args: &[&[u8]]) -> Result<&[u8]> {
+    fn call_function(&self, name: &str, args: &[u8]) -> Result<&[u8]> {
         let vals = Vec::<Val>::with_capacity(args.len());
 
         let func = self
