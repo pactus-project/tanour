@@ -1,9 +1,9 @@
 use crate::action::Action;
 use crate::compile;
 use crate::error::{Error, Result};
-use crate::provider::Provider;
+use crate::provider_api::ProviderAPI;
 use crate::types::{Address, Bytes};
-use crate::{memory, storage::Storage};
+use crate::{memory, state::State};
 use log::debug;
 #[cfg(feature = "cranelift")]
 use wasmer::Cranelift;
@@ -25,15 +25,13 @@ pub struct Contract<P> {
     address: Address,
     /// Wasmer instance of the code
     instance: wasmer::Instance,
-    /// storage handler of the contract
-    storage: Storage<P>,
-    //
-    //  provider: P,
+    /// State of the contract
+    state: State<P>,
 }
 
 impl<P> Contract<P>
 where
-    P: Provider,
+    P: ProviderAPI,
 {
     pub fn instantiate(
         provider: P,
@@ -54,13 +52,12 @@ where
             }
         })?;
 
-        let storage = Storage::new(provider, address, PAGE_SIZE);
+        let state = State::new(provider, address, PAGE_SIZE);
 
         Ok(Contract {
             address,
             instance,
-            storage,
-            //  provider,
+            state,
         })
     }
 
@@ -68,8 +65,13 @@ where
         Ok(())
     }
 
+    pub fn run_execute(&self, args: &[u8]) -> Result<&[u8]> {
+        //self.state.make_readonly(false);
+        self.call_function("execute", args)
+    }
+
     /// Calls a function with the given arguments.
-    pub fn call_function(&self, name: &str, args: &[&[u8]]) -> Result<&[u8]> {
+    fn call_function(&self, name: &str, args: &[u8]) -> Result<&[u8]> {
         let vals = Vec::<Val>::with_capacity(args.len());
 
         let func = self

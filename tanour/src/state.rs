@@ -1,6 +1,6 @@
 use crate::{
     error::Result,
-    provider::Provider,
+    provider_api::ProviderAPI,
     types::{Address, Bytes},
 };
 use std::collections::hash_map::Entry;
@@ -24,25 +24,32 @@ impl Page {
     }
 }
 
+// TODO: Rename it to the state
 #[derive(Debug)]
-pub struct Storage<P> {
+pub struct State<P> {
     provider: P,
     address: Address,
     page_size: usize,
     pages: HashMap<usize, Page>,
+    readonly: bool,
 }
 
-impl<P> Storage<P>
+impl<P> State<P>
 where
-    P: Provider,
+    P: ProviderAPI,
 {
     pub fn new(provider: P, address: Address, page_size: usize) -> Self {
-        Storage {
+        State {
             provider,
             address,
             page_size,
             pages: HashMap::new(),
+            readonly: true,
         }
+    }
+
+    pub fn make_readonly(&mut self, readonly: bool ) {
+        self.readonly = readonly;
     }
 
     fn get_page(&mut self, page_no: usize) -> Result<&mut Page> {
@@ -111,5 +118,5 @@ where
 }
 
 #[cfg(test)]
-#[path = "./storage_test.rs"]
-pub mod storage_test;
+#[path = "./state_test.rs"]
+pub mod state_test;

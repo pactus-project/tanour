@@ -5,7 +5,7 @@ mod tests {
     use crate::{
         action::{Action, CallMethod},
         contract::Contract,
-        provider::provider_test::ProviderMock,
+        provider_api::provider_mock::ProviderMock,
         utils,
     };
 
@@ -46,7 +46,7 @@ mod tests {
 
         let provider = ProviderMock::new(1024 * 1024);
         let contract = Contract::instantiate(provider, address, &code, 1000000).unwrap();
-        let res = contract.call_function("func", &[&[]]);
+        let res = contract.call_function("func", &[]);
         assert!(res.is_ok());
     }
 }

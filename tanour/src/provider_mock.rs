@@ -1,6 +1,6 @@
 #[cfg(test)]
 use crate::error::Error;
-use crate::provider::*;
+use crate::provider_api::*;
 use crate::types::{Address, Bytes};
 
 #[derive(Debug, Clone)]
@@ -20,7 +20,7 @@ impl ProviderMock {
     }
 }
 
-impl Provider for ProviderMock {
+impl ProviderAPI for ProviderMock {
     fn read_storage(&self, _address: &Address, offset: usize, length: usize) -> Result<Bytes> {
         if length + offset > self.storage.len() {
             return Err(Error::StorageError{msg: "Invalid offset".to_owned()});
