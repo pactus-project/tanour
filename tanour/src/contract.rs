@@ -69,7 +69,7 @@ where
     }
 
     /// Calls a function with the given arguments.
-    fn call_function(&self, name: &str, args: &[&[u8]]) -> Result<&[u8]> {
+    pub fn call_function(&self, name: &str, args: &[&[u8]]) -> Result<&[u8]> {
         let vals = Vec::<Val>::with_capacity(args.len());
 
         let func = self
