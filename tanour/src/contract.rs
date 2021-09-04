@@ -1,4 +1,5 @@
-use crate::action::Action;
+use std::ops::Deref;
+
 use crate::compile;
 use crate::error::{Error, Result};
 use crate::provider_api::ProviderAPI;
@@ -33,7 +34,7 @@ impl<P> Contract<P>
 where
     P: ProviderAPI,
 {
-    pub fn instantiate(
+    pub fn new(
         provider: P,
         address: Address,
         code: &Bytes,
@@ -61,17 +62,14 @@ where
         })
     }
 
-    pub fn execute(&self, _action: Action) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn run_execute(&self, args: &[u8]) -> Result<&[u8]> {
+    pub fn call_process_msg_function(&self, args: &[u8]) -> Result<&[u8]> {
         //self.state.make_readonly(false);
-        self.call_function("execute", args)
+        //self.call_function("process_msg", args)
+        todo!()
     }
 
     /// Calls a function with the given arguments.
-    fn call_function(&self, name: &str, args: &[u8]) -> Result<&[u8]> {
+    fn call_function(&self, name: &str, args: &[Val]) -> Result<Box<[Val]>> {
         let vals = Vec::<Val>::with_capacity(args.len());
 
         let func = self
@@ -83,14 +81,12 @@ where
                 msg: format!("{}", original),
             })?;
 
-        let result = func.call(&vals).map_err(|original| Error::RuntimeError {
+        let result = func.call(&args).map_err(|original| Error::RuntimeError {
             func_name: name.to_owned(),
             msg: format!("{}", original),
         })?;
 
-        debug!("result: {:?}", result);
-
-        Ok(&[0])
+        Ok(result)
     }
 }
 
