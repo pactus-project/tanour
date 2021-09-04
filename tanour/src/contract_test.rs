@@ -1,27 +1,23 @@
 #[cfg(test)]
 mod tests {
-    use wasmer::{Memory, Pages};
+    use wasmer::{Memory, Pages, Val};
 
-    use crate::{
-        action::{Action, CallMethod},
-        contract::Contract,
-        provider_api::provider_mock::ProviderMock,
-        utils,
-    };
+    use crate::{contract::Contract, provider_api::provider_mock::ProviderMock, utils};
 
     #[test]
 
     fn test_exported_memory() {
-        let sum_wat = r#"(module
-            (memory 4)
-            (export "memory" (memory 0))
-        )"#;
+        let wat = r#"
+(module
+    (memory 4)
+    (export "memory" (memory 0))
+)"#;
 
-        let code = wat::parse_str(sum_wat).unwrap();
+        let code = wat::parse_str(wat).unwrap();
         let address = utils::address_from_hex("deadbeef00000000000000000000000000000000");
 
         let provider = ProviderMock::new(1024 * 1024);
-        let contract = Contract::instantiate(provider, address, &code, 1000000).unwrap();
+        let contract = Contract::new(provider, address, &code, 1000000).unwrap();
         let instance_memory: Memory = contract
             .instance
             .exports
@@ -35,18 +31,43 @@ mod tests {
     }
 
     #[test]
-    fn test_call() {
-        let sum_wat = r#"(module
-            (type $t0 (func))
-            (func $func (type $t0))
-            (export "func" (func $func)))"#;
+    fn test_call_no_params() {
+        let wat = r#"
+(module
+    (type $t0 (func))
+    (func $nope (type $t0))
+    (export "nope" (func $nope))
+)"#;
 
-        let code = wat::parse_str(sum_wat).unwrap();
+        let code = wat::parse_str(wat).unwrap();
         let address = utils::address_from_hex("deadbeef00000000000000000000000000000000");
 
         let provider = ProviderMock::new(1024 * 1024);
-        let contract = Contract::instantiate(provider, address, &code, 1000000).unwrap();
-        let res = contract.call_function("func", &[]);
-        assert!(res.is_ok());
+        let contract = Contract::new(provider, address, &code, 1000000).unwrap();
+        let res = contract.call_function("nope", &[]).unwrap();
+        assert_eq!(res.to_vec(), Vec::new());
+    }
+
+    #[test]
+    fn test_call_with_params() {
+        let wat = r#"
+(module
+    (type $t0 (func))
+    (func $add (param $param0 i32) (param $param1 i32) (result i32)
+        (i32.add
+        (local.get $param0)
+        (local.get $param1)
+        )
+    )
+    (export "add" (func $add))
+)"#;
+
+        let code = wat::parse_str(wat).unwrap();
+        let address = utils::address_from_hex("deadbeef00000000000000000000000000000000");
+
+        let provider = ProviderMock::new(1024 * 1024);
+        let contract = Contract::new(provider, address, &code, 1000000).unwrap();
+        let res = contract.call_function("add", &[Val::I32(1), Val::I32(2)]).unwrap();
+        assert_eq!(res.to_vec(), vec![Val::I32(3)]);
     }
 }
