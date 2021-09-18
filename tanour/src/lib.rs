@@ -3,9 +3,10 @@ pub mod contract;
 pub mod provider_api;
 pub mod types;
 
-mod compile;
 mod utils;
-mod memory;
+mod region;
 mod state;
+mod executor;
+mod wasmer;
 
 

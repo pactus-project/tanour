@@ -153,7 +153,7 @@ pub fn limit_to_pages(limit: usize) -> Pages {
 
 #[cfg(test)]
 mod tests {
-    use crate::memory::LimitingTunables;
+    use super::*;
     use wasmer::Cranelift;
     use wasmer::Universal;
     use wasmer::{imports, wat2wasm, BaseTunables, Instance, Memory, Module, Pages, Store, Target};
