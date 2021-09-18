@@ -1,6 +1,6 @@
 [workspace]
-
 members = [
     "tanour",
     #"tanour-server",
 ]
+exclude = ["test-contract"]
