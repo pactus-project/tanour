@@ -32,9 +32,7 @@ mod __wasm_export_process_msg {
 
 // #[kelk_derive(instantiate)]
 fn instantiate(Context: ContextMut) -> Result<Response, TestError> {
-    Ok(Response{
-        res: 0,
-    })
+    Ok(Response { res: 0 })
 }
 
 /// The process_msg function is the main function of the *deployed* contract actor

@@ -1,17 +1,13 @@
-use super::compile;
-use super::limiting_tunables;
+use super::{compile, memory};
 use crate::error::{Error, Result};
 use crate::executor;
-use crate::region::Region;
 use crate::types::Bytes;
-use log::debug;
-use std::convert::{TryFrom, TryInto};
-use wasmer::Memory;
 
 #[cfg(feature = "cranelift")]
 use wasmer::Cranelift;
+use wasmer::Memory;
 #[cfg(not(feature = "cranelift"))]
-use wasmer::{BaseTunables, Exports, ImportObject, Module, Singlepass, Store, Target, Universal};
+use wasmer::{BaseTunables, Exports, ImportObject, Val};
 
 const PAGE_SIZE: usize = 1024 * 1024; // 1 kilobyte
 
@@ -27,7 +23,7 @@ pub struct Executor {
 }
 
 impl Executor {
-    pub fn new(code: &Bytes, memory_limit: u64) -> Result<Self> {
+    pub fn new(code: &[u8], memory_limit: u64) -> Result<Self> {
         let module = compile::compile(&code, memory_limit)?;
 
         let mut import_obj = ImportObject::new();
@@ -44,8 +40,21 @@ impl Executor {
         Ok(Executor { instance })
     }
 
+    fn call_function(&self, name: &str, vals: &[Val]) -> Result<Box<[Val]>> {
+        let func = self
+            .instance
+            .exports
+            .get_function(&name)
+            .map_err(|original| Error::RuntimeError {
+                msg: format!("{}", original),
+            })?;
+
+        func.call(vals).map_err(|original| Error::RuntimeError {
+            msg: format!("{}", original),
+        })
+    }
+
     fn memory(&self) -> Result<Memory> {
-        // Check what happened
         let mut memories: Vec<Memory> = self
             .instance
             .exports
@@ -64,52 +73,60 @@ impl Executor {
 }
 
 impl executor::Executor for Executor {
-    fn call_function(&self, name: &str, args_ptr: &Region) -> Result<Option<Region>> {
-        let func = self
-            .instance
-            .exports
-            .get_function(&name)
-            .map_err(|original| Error::RuntimeError {
-                msg: format!("{}", original),
-            })?;
-
-        let mut wasmer_args = Vec::new();
-        for arg in args {
-            wasmer_args.push(arg.into());
-        }
-
-        let result = func
-            .call(&wasmer_args)
-            .map_err(|original| Error::RuntimeError {
-                msg: format!("{}", original),
-            })?;
+    fn call_fn_1(&self, name: &str, arg: u32) -> Result<()> {
+        let val = wasmer::Val::I32(arg as i32);
+        let result = self.call_function(name, &[val])?;
 
         match result.first() {
-            Some(val) => Ok(Some(val.try_into()?)),
-            None => Ok(None),
+            Some(val) => Err(Error::RuntimeError {
+                msg: format!("Invalid return value for {}", name),
+            }),
+            None => Ok(()),
         }
     }
-}
 
-impl From<&Value> for wasmer::Val {
-    fn from(val: &Value) -> Self {
-        match val {
-            Value::I32(i32) => wasmer::Val::I32(*i32),
-            Value::I64(i64) => wasmer::Val::I64(*i64),
-        }
-    }
-}
 
-impl TryFrom<&wasmer::Val> for Value {
-    type Error = Error;
+    fn call_fn_2(&self, name: &str, arg: u32) -> Result<u32> {
+        let val = wasmer::Val::I32(arg as i32);
+        let result = self.call_function(name, &[val])?;
 
-    fn try_from(val: &wasmer::Val) -> Result<Self> {
-        match val {
-            wasmer::Val::I32(i32) => Ok(Value::I32(*i32)),
-            wasmer::Val::I64(i64) => Ok(Value::I64(*i64)),
-            _ => Err(Error::RuntimeError {
-                msg: "Invalid wasmer value".to_string(),
+        match result.first() {
+            Some(val) => match val {
+                Val::I32(i32) => Ok(*i32 as u32),
+                _ => Err(Error::RuntimeError {
+                    msg: format!("Invalid return value for {}", name),
+                }),
+            },
+            None => Err(Error::RuntimeError {
+                msg: format!("No return value for {}", name),
             }),
         }
     }
+
+    fn call_fn_3(&self, name: &str, arg1: u32, arg2: u32) -> Result<u32> {
+        let val1 = wasmer::Val::I32(arg1 as i32);
+        let val2 = wasmer::Val::I32(arg2 as i32);
+        let result = self.call_function(name, &[val1, val2])?;
+
+        match result.first() {
+            Some(val) => match val {
+                Val::I32(i32) => Ok(*i32 as u32),
+                _ => Err(Error::RuntimeError {
+                    msg: format!("Invalid return value for {}", name),
+                }),
+            },
+            None => Err(Error::RuntimeError {
+                msg: format!("No return value for {}", name),
+            }),
+        }
+    }
+
+
+    fn write_ptr(&self, ptr: u32, data: &[u8]) -> Result<()> {
+        memory::write_ptr(&self.memory()?, ptr, data)
+    }
 }
+
+#[cfg(test)]
+#[path = "./executor_test.rs"]
+mod tests;

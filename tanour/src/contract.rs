@@ -4,7 +4,7 @@ use crate::provider_api::ProviderAPI;
 use crate::state::State;
 use crate::types::{Address, Bytes};
 use crate::wasmer;
-use minicbor::Encode;
+use minicbor::{Decode, Encode};
 
 const PAGE_SIZE: usize = 1024 * 1024; // 1 kilobyte
 
@@ -38,42 +38,25 @@ where
         })
     }
 
-    pub fn call_process_msg<E: Encode>(&self, msg: E) -> Result<&[u8]> {
+    pub fn call_process_msg<'a, M: Encode>(&self, msg: M) -> Result<()> {
         //self.state.make_readonly(false);
-        let mut arg = [0u8; 128];
-        minicbor::encode(msg, arg.as_mut()).unwrap();
-        let size = arg.len();
-        let ptr = self.allocate(size as i32)?;
+        let mut data = [0u8; 128];
+        minicbor::encode(msg, data.as_mut()).unwrap();
+        let size = data.len() as u32;
+        let ptr = self.allocate(size)?;
 
-        let mut vec = unsafe { Vec::from_raw_parts(ptr as *mut u8, size, size) };
-        vec.clone_from_slice(arg);
-        let mut vals = Vec::<Value>::with_capacity(2);
-        vals[0] = Value::I32(ptr as i32);
-        vals[1] = Value::I32(size as i32);
+        self.executor.write_ptr(ptr, &data)?;
 
-        let res = self.call_function("process_msg", &vals)?;
+        let res = self.executor.call_fn_3("process_msg", ptr, size)?;
         println!("{:?}", res);
-        Ok(&[0])
+        Ok(())
     }
 
-    fn allocate(&self, size: i32) -> Result<u32> {
-        let arg = Value::I32(size);
-        let res = self.call_function("allocate", &[arg])?;
-        if let Value::I32(ptr) = res.unwrap() {
-            return Ok(ptr as u32);
-        }
-
-        Err(Error::RuntimeError {
-            msg: "invalid allocation".to_string(),
-        })
-    }
-
-    /// Calls a function with the given arguments.
-    fn call_function(&self, name: &str, args: &[Value]) -> Result<Option<Value>> {
-        self.executor.call_function(name, args)
+    fn allocate(&self, size: u32) -> Result<u32> {
+        self.executor.call_fn_2("allocate", size)
     }
 }
 
 #[cfg(test)]
 #[path = "./contract_test.rs"]
-mod contract_test;
+mod tests;

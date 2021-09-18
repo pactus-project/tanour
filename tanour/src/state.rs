@@ -119,4 +119,4 @@ where
 
 #[cfg(test)]
 #[path = "./state_test.rs"]
-pub mod state_test;
+mod tests;
