@@ -20,13 +20,11 @@ Each contract actor:
  - Can process the message it receives through `process_msg` method.
  - Can concurrently send a message to another contract actor through the `send_msg` method.
 
-These the only method that each contract can be exposed to the outside world.
+These are the only methods that each contract can expose to the outside world.
 
 ### Storage as file
 
-Storage in Zarb is not a set of key-value pairs, it's a separate file that each contract actor has read and write access to.
-Therefore, the contract can have a separate state and it comes with many advantages.
-There are some disadvantages like difficulty of writing the smart contract and lake map data type.
+Storage in Zarb is not a set of key-value pairs, indeed it's a separate file that each contract actor has the read and write access to modify it. This model comes with many advantages. However, there are some disadvantages like difficulty of writing the smart contract and lack supported map data type.
 
 **Storage as key-value pairs**
 
@@ -35,8 +33,11 @@ There are some disadvantages like difficulty of writing the smart contract and l
 **Storage as file**
 
 ![storage_file](https://user-images.githubusercontent.com/8073510/133919510-b3c2b63f-f5bc-49f8-b90b-b93aa8ee5285.png)
+
+
 ### WebAssembly
-Contract actor are written in WebAssembly, Right now Tanour is using [Wasmer](https://wasmer.io/) to execute the contracts.
+
+Contract actor are written in WebAssembly and currently Tanour is using [Wasmer](https://wasmer.io/) to execute the contracts.
 
 ### Gas metering
 
