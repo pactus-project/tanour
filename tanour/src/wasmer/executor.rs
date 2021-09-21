@@ -103,14 +103,14 @@ impl executor::Executor for Executor {
         }
     }
 
-    fn call_fn_3(&self, name: &str, arg1: u32, arg2: u32) -> Result<u32> {
+    fn call_fn_3(&self, name: &str, arg1: u32, arg2: u32) -> Result<u64> {
         let val1 = wasmer::Val::I32(arg1 as i32);
         let val2 = wasmer::Val::I32(arg2 as i32);
         let result = self.call_function(name, &[val1, val2])?;
 
         match result.first() {
             Some(val) => match val {
-                Val::I32(i32) => Ok(*i32 as u32),
+                Val::I64(i64) => Ok(*i64 as u64),
                 _ => Err(Error::RuntimeError {
                     msg: format!("Invalid return value for {}", name),
                 }),
@@ -124,6 +124,10 @@ impl executor::Executor for Executor {
 
     fn write_ptr(&self, ptr: u32, data: &[u8]) -> Result<()> {
         memory::write_ptr(&self.memory()?, ptr, data)
+    }
+
+    fn read_ptr(&self, ptr: u32, len: usize) -> Result<Vec<u8>> {
+        memory::read_ptr(&self.memory()?, ptr, len)
     }
 }
 
