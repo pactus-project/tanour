@@ -15,8 +15,6 @@ pub struct ResultData {
 }
 
 pub struct Contract<P> {
-    /// Address of the code.
-    address: Address,
     /// Wasm executor
     executor: Box<dyn Executor>,
     /// State of the contract
@@ -29,12 +27,11 @@ impl<P> Contract<P>
 where
     P: ProviderAPI,
 {
-    pub fn new(provider: P, address: Address, code: &Bytes, memory_limit: u64) -> Result<Self> {
+    pub fn new(provider: P, code: &Bytes, memory_limit: u64) -> Result<Self> {
         let executor = wasmer::executor::Executor::new(code, memory_limit)?;
-        let state = State::new(provider, address, PAGE_SIZE);
+        let state = State::new(provider, PAGE_SIZE);
 
         Ok(Contract {
-            address,
             executor: Box::new(executor),
             state,
             buffer: Vec::new(),

@@ -11,8 +11,11 @@ pub enum Error {
     #[error("Runtime error: {}", msg)]
     RuntimeError { msg: String },
 
-    #[error("Storage error: {}", msg)]
-    StorageError { msg: String },
+    #[error("Storage read error: {}", msg)]
+    StorageReadError { msg: String },
+
+    #[error("Storage write error: {}", msg)]
+    StorageWriteError { msg: String },
 
     #[error("Memory error: {}", msg)]
     MemoryError { msg: String },
