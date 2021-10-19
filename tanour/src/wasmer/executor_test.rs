@@ -9,7 +9,7 @@ fn test_exported_memory() {
     (export "memory" (memory 0))
 )"#;
     let code = wat::parse_str(wat).unwrap();
-    let exec = Executor::new(&code, 1000000).unwrap();
+    let exec = WasmerExecutor::new(&code, 1000000).unwrap();
     assert_eq!(exec.memory().unwrap().ty().minimum, Pages(4));
     assert_eq!(exec.memory().unwrap().ty().maximum, Some(Pages(15)));
 }
@@ -23,7 +23,7 @@ fn test_call_no_params() {
     (export "nope" (func $nope))
 )"#;
 
-    let exec = Executor::new(wat.as_bytes(), 1024).unwrap();
+    let exec = WasmerExecutor::new(wat.as_bytes(), 1024).unwrap();
     let res = exec.call_function("nope", &[]);
     assert!(res.is_ok());
 }
@@ -43,7 +43,7 @@ fn test_call_with_params() {
 )"#;
 
     let code = wat::parse_str(wat).unwrap();
-    let exec = Executor::new(&code, 1024).unwrap();
+    let exec = WasmerExecutor::new(&code, 1024).unwrap();
 
     let res = exec
         .call_function("add", &[Val::I32(1), Val::I32(2)])

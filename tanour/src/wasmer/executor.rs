@@ -1,13 +1,14 @@
+use super::env::Env;
+use super::native::*;
 use super::{compile, memory};
 use crate::error::{Error, Result};
 use crate::executor;
-use crate::types::Bytes;
-
+use crate::state::State;
 #[cfg(feature = "cranelift")]
 use wasmer::Cranelift;
-use wasmer::Memory;
 #[cfg(not(feature = "cranelift"))]
-use wasmer::{BaseTunables, Exports, ImportObject, Val};
+use wasmer::{Exports, ImportObject, Val};
+use wasmer::{Function, Memory};
 
 const PAGE_SIZE: usize = 1024 * 1024; // 1 kilobyte
 
@@ -17,17 +18,25 @@ pub struct ResultData {
     pub data: Vec<u8>,
 }
 
-pub struct Executor {
+pub struct WasmerExecutor {
     /// Wasmer instance of the code
     instance: wasmer::Instance,
+
+
 }
 
-impl Executor {
+impl WasmerExecutor {
     pub fn new(code: &[u8], memory_limit: u64) -> Result<Self> {
         let module = compile::compile(&code, memory_limit)?;
-
+        let env = Env::new();
+        let store = module.store();
         let mut import_obj = ImportObject::new();
         let mut env_imports = Exports::new();
+
+        env_imports.insert(
+            "write_storage",
+            Function::new_native_with_env(store, env.clone(), native_write_storage),
+        );
 
         import_obj.register("zarb", env_imports);
 
@@ -37,7 +46,7 @@ impl Executor {
             }
         })?;
 
-        Ok(Executor { instance })
+        Ok(WasmerExecutor { instance })
     }
 
     fn call_function(&self, name: &str, vals: &[Val]) -> Result<Box<[Val]>> {
@@ -72,7 +81,7 @@ impl Executor {
     }
 }
 
-impl executor::Executor for Executor {
+impl executor::Executor for WasmerExecutor {
     fn call_fn_1(&self, name: &str, arg: u32) -> Result<()> {
         let val = wasmer::Val::I32(arg as i32);
         let result = self.call_function(name, &[val])?;
@@ -84,7 +93,6 @@ impl executor::Executor for Executor {
             None => Ok(()),
         }
     }
-
 
     fn call_fn_2(&self, name: &str, arg: u32) -> Result<u32> {
         let val = wasmer::Val::I32(arg as i32);
@@ -120,7 +128,6 @@ impl executor::Executor for Executor {
             }),
         }
     }
-
 
     fn write_ptr(&self, ptr: u32, data: &[u8]) -> Result<()> {
         memory::write_ptr(&self.memory()?, ptr, data)

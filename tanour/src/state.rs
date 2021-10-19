@@ -24,7 +24,6 @@ impl Page {
     }
 }
 
-// TODO: Rename it to the state
 #[derive(Debug)]
 pub struct State<P> {
     provider: P,

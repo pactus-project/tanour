@@ -28,7 +28,7 @@ where
     P: ProviderAPI,
 {
     pub fn new(provider: P, code: &Bytes, memory_limit: u64) -> Result<Self> {
-        let executor = wasmer::executor::Executor::new(code, memory_limit)?;
+        let executor = wasmer::WasmerExecutor::new(code, memory_limit)?;
         let state = State::new(provider, PAGE_SIZE);
 
         Ok(Contract {

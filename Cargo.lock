@@ -391,7 +391,6 @@ dependencies = [
 [[package]]
 name = "kelk"
 version = "0.0.3"
-source = "git+https://github.com/zarbchain/kelk#215dd2ca1c27fd81f8cbeddd5d1a3ace76ee1ecd"
 dependencies = [
  "kelk-derive",
  "minicbor",
@@ -402,7 +401,6 @@ dependencies = [
 [[package]]
 name = "kelk-derive"
 version = "0.1.0"
-source = "git+https://github.com/zarbchain/kelk#215dd2ca1c27fd81f8cbeddd5d1a3ace76ee1ecd"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -508,9 +506,9 @@ checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 
 [[package]]
 name = "minicbor"
-version = "0.11.1"
+version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6dced2db4cf71eff54673f123588a8f7ec25339aab89dc6b5d01e66a2225f34"
+checksum = "9761df552087b47d7651dd4d14717c35ef43d47c01e04e399530faaa427ca541"
 dependencies = [
  "half",
  "minicbor-derive",
