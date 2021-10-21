@@ -1,27 +1,13 @@
-use crate::{
-    error::Result,
-    provider_api::ProviderAPI,
-    types::{Address, Bytes},
-};
+use crate::{error::Result, page::Page, provider_api::ProviderAPI, types::Bytes};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+#[cfg(test)]
+use mockall::{automock, predicate::*};
 
-#[derive(Debug)]
-struct Page {
-    offset: usize,
-    length: usize,
-    data: Bytes,
-    updated: bool,
-}
-impl Page {
-    pub fn new(offset: usize, length: usize, data: Bytes) -> Self {
-        Page {
-            offset,
-            length,
-            data,
-            updated: false,
-        }
-    }
+#[cfg_attr(test, automock)]
+pub trait StateTrait: Send + Sync {
+    fn read_storage(&mut self, offset: usize, len: usize) -> Result<Bytes>;
+    fn write_storage(&mut self, offset: usize, data: &Bytes) -> Result<()>;
 }
 
 #[derive(Debug)]
@@ -63,7 +49,12 @@ where
 
         Ok(page)
     }
+}
 
+impl<P> StateTrait for State<P>
+where
+    P: ProviderAPI,
+{
     fn read_storage(&mut self, offset: usize, length: usize) -> Result<Bytes> {
         let first_page = offset / self.page_size;
         let last_page = offset + length / self.page_size;
@@ -87,8 +78,8 @@ where
         Ok(data)
     }
 
-    fn write_storage(&mut self, offset: usize, value: &Bytes) -> Result<()> {
-        let length = value.len();
+    fn write_storage(&mut self, offset: usize, data: &Bytes) -> Result<()> {
+        let length = data.len();
         let first_page = offset / self.page_size;
         let last_page = (offset + length) / self.page_size;
         let mut write_length = 0;
@@ -109,7 +100,7 @@ where
                 buffer = left;
             }
 
-            let d = &value[write_length..write_length + len];
+            let d = &data[write_length..write_length + len];
             buffer.copy_from_slice(d);
 
             page_start_offset = 0;

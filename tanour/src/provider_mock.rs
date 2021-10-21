@@ -30,7 +30,7 @@ impl ProviderAPI for ProviderMock {
         Ok(data.to_vec())
     }
 
-    fn write_storage(&mut self, offset: usize, value: &Bytes) -> Result<()> {
+    fn write_storage(&mut self, offset: usize, data: &Bytes) -> Result<()> {
         // if offset + value.len() > self.storage.len() {
         //     return Err(Error::StorageWriteError {
         //         msg: "Invalid offset".to_owned(),

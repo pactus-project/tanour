@@ -1,11 +1,8 @@
-use crate::{
-    error::Result,
-    types::{Address, Bytes},
-};
+use crate::{error::Result, types::Bytes};
 
-pub trait ProviderAPI {
+pub trait ProviderAPI: Send + Sync + 'static {
     fn read_storage(&self, offset: usize, length: usize) -> Result<Bytes>;
-    fn write_storage(&mut self, offset: usize, value: &Bytes) -> Result<()>;
+    fn write_storage(&mut self, offset: usize, data: &Bytes) -> Result<()>;
     fn query(&self, query: &Bytes) -> Result<Bytes>;
 }
 

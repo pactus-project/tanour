@@ -16,6 +16,10 @@ fn test_call_process_msg() {
     let msg = TestMsg::Mul { a: 2, b: 2 };
     let res: Result<TestResponse, TestError> = contract.call_process_msg(&msg).unwrap();
     assert_eq!(res.unwrap(), TestResponse::I32 { value: 4 });
+
+    let msg = TestMsg::Div { a: 2, b: 0 };
+    let res: Result<TestResponse, TestError> = contract.call_process_msg(&msg).unwrap();
+    assert!(res.is_err());
 }
 
 #[test]
