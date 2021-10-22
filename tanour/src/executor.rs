@@ -1,4 +1,4 @@
-use crate::error::Result;
+use crate::{error::Result, types::Bytes};
 
 pub trait Executor {
     /// Calls a function with the given arguments.
@@ -11,5 +11,5 @@ pub trait Executor {
     fn call_fn_3(&self, name: &str, arg1: u32, arg2: u32) -> Result<u64>;
 
     fn write_ptr(&self, ptr: u32, data: &[u8]) -> Result<()>;
-    fn read_ptr(&self, ptr: u32, len: usize) -> Result<Vec<u8>>;
+    fn read_ptr(&self, ptr: u32, len: usize) -> Result<Bytes>;
 }

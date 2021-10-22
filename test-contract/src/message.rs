@@ -16,4 +16,10 @@ pub enum TestMsg {
         #[n(1)]
         b: i32,
     },
+    #[n(2)]
+    WriteBuffer(#[n(0)] [u8;16]),
+
+    #[n(3)]
+    ReadBuffer,
+
 }

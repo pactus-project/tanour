@@ -154,8 +154,7 @@ pub fn limit_to_pages(limit: usize) -> Pages {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wasmer::Cranelift;
-    use wasmer::Universal;
+    use wasmer::{Singlepass, Universal};
     use wasmer::{imports, wat2wasm, BaseTunables, Instance, Memory, Module, Pages, Store, Target};
 
     #[test]
@@ -169,7 +168,7 @@ mod tests {
         let wasm_bytes = wat2wasm(wat)?;
 
         // Any compiler and any engine do the job here
-        let compiler = Cranelift::default();
+        let compiler = Singlepass::default();
         let engine = Universal::new(compiler).engine();
 
         // Here is where the fun begins

@@ -1,15 +1,13 @@
+use super::env::*;
+use super::native::*;
 use super::{compile, memory};
 use crate::error::{Error, Result};
 use crate::executor;
-use crate::types::Bytes;
-
-#[cfg(feature = "cranelift")]
-use wasmer::Cranelift;
-use wasmer::Memory;
-#[cfg(not(feature = "cranelift"))]
-use wasmer::{BaseTunables, Exports, ImportObject, Val};
-
-const PAGE_SIZE: usize = 1024 * 1024; // 1 kilobyte
+use crate::state::StateTrait;
+use std::ptr::NonNull;
+use std::sync::Arc;
+use std::sync::Mutex;
+use wasmer::{Exports, Function, ImportObject, Val};
 
 #[derive(Debug, Clone)]
 pub struct ResultData {
@@ -17,62 +15,54 @@ pub struct ResultData {
     pub data: Vec<u8>,
 }
 
-pub struct Executor {
-    /// Wasmer instance of the code
-    instance: wasmer::Instance,
+pub struct WasmerExecutor {
+    /// We put this instance in a box to maintain a constant memory address for the entire
+    /// lifetime of the instance in the cache. This is needed e.g. when linking the wasmer
+    /// instance to a context.
+    ///
+    /// This instance should only be accessed via the Environment, which provides safe access.
+    _instance: Box<wasmer::Instance>,
+    env: Env,
 }
 
-impl Executor {
-    pub fn new(code: &[u8], memory_limit: u64) -> Result<Self> {
+impl WasmerExecutor {
+    pub fn new(code: &[u8], memory_limit: u64, state: Arc<Mutex<dyn StateTrait>>) -> Result<Self> {
         let module = compile::compile(&code, memory_limit)?;
-
+        let store = module.store();
+        let env = Env::new(state);
         let mut import_obj = ImportObject::new();
         let mut env_imports = Exports::new();
 
+        env_imports.insert(
+            "write_storage",
+            Function::new_native_with_env(store, env.clone(), native_write_storage),
+        );
+
+        env_imports.insert(
+            "read_storage",
+            Function::new_native_with_env(store, env.clone(), native_read_storage),
+        );
+
         import_obj.register("zarb", env_imports);
 
-        let instance = wasmer::Instance::new(&module, &import_obj).map_err(|original| {
-            Error::InstantiationError {
+        let _instance = Box::new(wasmer::Instance::new(&module, &import_obj).map_err(
+            |original| Error::InstantiationError {
                 msg: format!("{:?}", original),
-            }
-        })?;
+            },
+        )?);
 
-        Ok(Executor { instance })
+        let instance_ptr = NonNull::from(_instance.as_ref());
+        env.set_instance(Some(instance_ptr));
+
+        Ok(WasmerExecutor { env, _instance })
     }
 
     fn call_function(&self, name: &str, vals: &[Val]) -> Result<Box<[Val]>> {
-        let func = self
-            .instance
-            .exports
-            .get_function(&name)
-            .map_err(|original| Error::RuntimeError {
-                msg: format!("{}", original),
-            })?;
-
-        func.call(vals).map_err(|original| Error::RuntimeError {
-            msg: format!("{}", original),
-        })
-    }
-
-    fn memory(&self) -> Result<Memory> {
-        let mut memories: Vec<Memory> = self
-            .instance
-            .exports
-            .iter()
-            .memories()
-            .map(|pair| pair.1.clone())
-            .collect();
-        if memories.len() != 1 {
-            Err(Error::RuntimeError {
-                msg: "Invalid memory map".to_owned(),
-            })
-        } else {
-            Ok(memories.pop().unwrap())
-        }
+        self.env.call_function(name, vals)
     }
 }
 
-impl executor::Executor for Executor {
+impl executor::Executor for WasmerExecutor {
     fn call_fn_1(&self, name: &str, arg: u32) -> Result<()> {
         let val = wasmer::Val::I32(arg as i32);
         let result = self.call_function(name, &[val])?;
@@ -84,7 +74,6 @@ impl executor::Executor for Executor {
             None => Ok(()),
         }
     }
-
 
     fn call_fn_2(&self, name: &str, arg: u32) -> Result<u32> {
         let val = wasmer::Val::I32(arg as i32);
@@ -121,13 +110,12 @@ impl executor::Executor for Executor {
         }
     }
 
-
     fn write_ptr(&self, ptr: u32, data: &[u8]) -> Result<()> {
-        memory::write_ptr(&self.memory()?, ptr, data)
+        memory::write_ptr(&self.env.memory()?, ptr, data)
     }
 
     fn read_ptr(&self, ptr: u32, len: usize) -> Result<Vec<u8>> {
-        memory::read_ptr(&self.memory()?, ptr, len)
+        memory::read_ptr(&self.env.memory()?, ptr, len)
     }
 }
 

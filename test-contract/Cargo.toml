@@ -5,8 +5,8 @@ edition = "2018"
 authors = ["Zarb development team <admin@zarb.network>"]
 
 [dependencies]
-kelk = { version = "0.0.3", git = "https://github.com/zarbchain/kelk" }
-minicbor = { version = "0.11.1", features = ["derive"] }
+kelk = { version = "0.0.4", git = "https://github.com/zarbchain/kelk" }
+minicbor = { version = "0.11", features = ["derive"] }
 
 [lib]
 name = "test_contract"
