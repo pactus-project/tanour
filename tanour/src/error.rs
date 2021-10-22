@@ -19,5 +19,10 @@ pub enum Error {
 
     #[error("Invalid memory region: {}", msg)]
     InvalidRegion { msg: String },
+
+    #[error("Serialization error: {}", msg)]
+    SerializationError {
+        msg: String,
+    },
 }
 pub type Result<T> = core::result::Result<T, Error>;

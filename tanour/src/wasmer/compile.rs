@@ -26,8 +26,10 @@ pub fn compile(code: &[u8], memory_limit: u64) -> Result<Module> {
 
     let engine = Universal::new(config).engine();
     let base = BaseTunables::for_target(&Target::default());
-    let tunables =
-        limiting_tunables::LimitingTunables::new(base, limiting_tunables::limit_to_pages(memory_limit as usize));
+    let tunables = limiting_tunables::LimitingTunables::new(
+        base,
+        limiting_tunables::limit_to_pages(memory_limit as usize),
+    );
     let store = Store::new_with_tunables(&engine, tunables);
 
     let module = Module::new(&store, code).map_err(|original| Error::CompileError {
