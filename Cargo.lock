@@ -350,6 +350,7 @@ dependencies = [
 [[package]]
 name = "kelk"
 version = "0.0.4"
+source = "git+https://github.com/zarbchain/kelk#f7ddd85fa883a8ad36aa63e16aba9ca637d694d3"
 dependencies = [
  "kelk-derive",
  "minicbor",
@@ -360,6 +361,7 @@ dependencies = [
 [[package]]
 name = "kelk-derive"
 version = "0.1.0"
+source = "git+https://github.com/zarbchain/kelk#f7ddd85fa883a8ad36aa63e16aba9ca637d694d3"
 dependencies = [
  "proc-macro2",
  "quote",
