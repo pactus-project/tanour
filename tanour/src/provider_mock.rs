@@ -1,11 +1,10 @@
 #[cfg(test)]
 use crate::error::Error;
 use crate::provider_api::*;
-use crate::types::{Address, Bytes};
 
 #[derive(Debug, Clone)]
 pub struct ProviderMock {
-    pub storage: Bytes,
+    pub storage: Vec<u8>,
 }
 
 impl ProviderMock {
@@ -19,7 +18,7 @@ impl ProviderMock {
 }
 
 impl ProviderAPI for ProviderMock {
-    fn read_storage(&self, offset: usize, length: usize) -> Result<Bytes> {
+    fn read_storage(&self, offset: usize, length: usize) -> Result<Vec<u8>> {
         if offset + length > self.storage.len() {
             return Err(Error::StorageReadError {
                 msg: "Invalid offset".to_owned(),
@@ -30,7 +29,7 @@ impl ProviderAPI for ProviderMock {
         Ok(data.to_vec())
     }
 
-    fn write_storage(&mut self, offset: usize, data: &Bytes) -> Result<()> {
+    fn write_storage(&mut self, _offset: usize, _data: &[u8]) -> Result<()> {
         // if offset + value.len() > self.storage.len() {
         //     return Err(Error::StorageWriteError {
         //         msg: "Invalid offset".to_owned(),
@@ -45,7 +44,7 @@ impl ProviderAPI for ProviderMock {
         todo!()
     }
 
-    fn query(&self, _query: &Bytes) -> Result<Bytes> {
+    fn query(&self, _query: &[u8]) -> Result<Vec<u8>> {
         todo!()
     }
 }

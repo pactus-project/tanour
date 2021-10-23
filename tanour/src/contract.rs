@@ -2,7 +2,6 @@ use crate::error::{Error, Result};
 use crate::executor::Executor;
 use crate::provider_api::ProviderAPI;
 use crate::state::State;
-use crate::types::Bytes;
 use crate::wasmer;
 use minicbor::{Decode, Encode};
 use std::sync::{Arc, Mutex};
@@ -28,7 +27,7 @@ impl<P> Contract<P>
 where
     P: ProviderAPI,
 {
-    pub fn new(provider: P, code: &Bytes, memory_limit: u64) -> Result<Self> {
+    pub fn new(provider: P, code: &[u8], memory_limit: u64) -> Result<Self> {
         let state = Arc::new(Mutex::new(State::new(provider, PAGE_SIZE)));
         let executor = wasmer::WasmerExecutor::new(code, memory_limit, state.clone())?;
 

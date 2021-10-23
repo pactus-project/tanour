@@ -7,7 +7,6 @@ use std::{
     sync::{Arc, Mutex},
 };
 use wasmer::{HostEnvInitError, Instance as WasmerInstance, Memory, Val, WasmerEnv};
-pub type WriteStorageFn = Arc<Mutex<dyn Fn(u32) -> i32 + Send + Sync>>;
 
 pub struct Context {
     /// A non-owning link to the wasmer instance
@@ -96,7 +95,7 @@ impl Env {
             let func =
                 instance
                     .exports
-                    .get_function(&name)
+                    .get_function(name)
                     .map_err(|original| Error::RuntimeError {
                         msg: format!("{}", original),
                     })?;

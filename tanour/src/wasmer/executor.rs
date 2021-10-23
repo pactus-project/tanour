@@ -27,7 +27,7 @@ pub struct WasmerExecutor {
 
 impl WasmerExecutor {
     pub fn new(code: &[u8], memory_limit: u64, state: Arc<Mutex<dyn StateTrait>>) -> Result<Self> {
-        let module = compile::compile(&code, memory_limit)?;
+        let module = compile::compile(code, memory_limit)?;
         let store = module.store();
         let env = Env::new(state);
         let mut import_obj = ImportObject::new();
