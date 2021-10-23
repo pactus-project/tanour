@@ -1,6 +1,5 @@
 use crate::types::Bytes;
 
-
 #[derive(Debug)]
 pub struct Page {
     pub offset: usize,

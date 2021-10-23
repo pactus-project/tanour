@@ -13,7 +13,7 @@ pub fn write_ptr(memory: &wasmer::Memory, ptr: u32, data: &[u8]) -> Result<()> {
             Ok(())
         }
         None => Err(Error::MemoryError {
-            msg: format!("Unable to write into wasm memory.",),
+            msg: "Unable to write into wasm memory.".to_string(),
         }),
     }
 }
@@ -30,7 +30,7 @@ pub fn read_ptr(memory: &wasmer::Memory, ptr: u32, len: usize) -> Result<Vec<u8>
             Ok(result)
         }
         None => Err(Error::MemoryError {
-            msg: format!("Unable to read from wasm memory.",),
+            msg: "Unable to read from wasm memory.".to_string(),
         }),
     }
 }

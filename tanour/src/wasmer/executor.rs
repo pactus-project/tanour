@@ -69,7 +69,7 @@ impl executor::Executor for WasmerExecutor {
 
         match result.first() {
             Some(val) => Err(Error::RuntimeError {
-                msg: format!("Invalid return value for {}", name),
+                msg: format!("Invalid return value for {}: {:?}", name, val),
             }),
             None => Ok(()),
         }

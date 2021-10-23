@@ -154,8 +154,8 @@ pub fn limit_to_pages(limit: usize) -> Pages {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wasmer::{Singlepass, Universal};
     use wasmer::{imports, wat2wasm, BaseTunables, Instance, Memory, Module, Pages, Store, Target};
+    use wasmer::{Singlepass, Universal};
 
     #[test]
     fn test_tunables_limit_memory() -> Result<(), Box<dyn std::error::Error>> {

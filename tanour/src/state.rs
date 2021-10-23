@@ -1,8 +1,8 @@
 use crate::{error::Result, page::Page, provider_api::ProviderAPI, types::Bytes};
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
 #[cfg_attr(test, automock)]
 pub trait StateTrait: Send + Sync {
@@ -29,10 +29,6 @@ where
             pages: HashMap::new(),
             readonly: true,
         }
-    }
-
-    pub fn make_readonly(&mut self, readonly: bool) {
-        self.readonly = readonly;
     }
 
     fn get_page(&mut self, page_no: usize) -> Result<&mut Page> {

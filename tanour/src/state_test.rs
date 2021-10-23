@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::{provider_api::provider_mock::ProviderMock, state::{State, StateTrait}};
+    use crate::{
+        provider_api::provider_mock::ProviderMock,
+        state::{State, StateTrait},
+    };
 
     #[test]
     fn test_read() {
