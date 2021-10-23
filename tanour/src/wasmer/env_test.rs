@@ -5,7 +5,7 @@ use wasmer::ImportObject;
 use wasmer::Pages;
 
 const ONE_KB: u64 = 1000;
-const ONE_MB: u64 = 1000000;
+const ONE_MB: u64 = ONE_KB * 1000;
 
 fn make_env(
     wat: &str,

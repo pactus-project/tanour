@@ -1,13 +1,13 @@
-use crate::{error::Result, page::Page, provider_api::ProviderAPI, types::Bytes};
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use crate::{error::Result, page::Page, provider_api::ProviderAPI};
 #[cfg(test)]
 use mockall::{automock, predicate::*};
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
 #[cfg_attr(test, automock)]
 pub trait StateTrait: Send + Sync {
-    fn read_storage(&mut self, offset: usize, len: usize) -> Result<Bytes>;
-    fn write_storage(&mut self, offset: usize, data: &Bytes) -> Result<()>;
+    fn read_storage(&mut self, offset: usize, len: usize) -> Result<Vec<u8>>;
+    fn write_storage(&mut self, offset: usize, data: &[u8]) -> Result<()>;
 }
 
 #[derive(Debug)]
@@ -31,10 +31,6 @@ where
         }
     }
 
-    pub fn make_readonly(&mut self, readonly: bool) {
-        self.readonly = readonly;
-    }
-
     fn get_page(&mut self, page_no: usize) -> Result<&mut Page> {
         let offset = page_no * self.page_size;
 
@@ -55,7 +51,7 @@ impl<P> StateTrait for State<P>
 where
     P: ProviderAPI,
 {
-    fn read_storage(&mut self, offset: usize, length: usize) -> Result<Bytes> {
+    fn read_storage(&mut self, offset: usize, length: usize) -> Result<Vec<u8>> {
         let first_page = offset / self.page_size;
         let last_page = offset + length / self.page_size;
         let mut data = Vec::new();
@@ -78,7 +74,7 @@ where
         Ok(data)
     }
 
-    fn write_storage(&mut self, offset: usize, data: &Bytes) -> Result<()> {
+    fn write_storage(&mut self, offset: usize, data: &[u8]) -> Result<()> {
         let length = data.len();
         let first_page = offset / self.page_size;
         let last_page = (offset + length) / self.page_size;

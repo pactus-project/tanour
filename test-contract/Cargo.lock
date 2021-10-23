@@ -16,8 +16,8 @@ checksum = "ac5956d4e63858efaec57e0d6c1c2f6a41e1487f830314a324ccd7e2223a7ca0"
 
 [[package]]
 name = "kelk"
-version = "0.0.4"
-source = "git+https://github.com/zarbchain/kelk#f7ddd85fa883a8ad36aa63e16aba9ca637d694d3"
+version = "0.0.5"
+source = "git+https://github.com/zarbchain/kelk?branch=main#2c374c05ef2f81130d64cef805851f699407658b"
 dependencies = [
  "kelk-derive",
  "minicbor",
@@ -28,7 +28,7 @@ dependencies = [
 [[package]]
 name = "kelk-derive"
 version = "0.1.0"
-source = "git+https://github.com/zarbchain/kelk#f7ddd85fa883a8ad36aa63e16aba9ca637d694d3"
+source = "git+https://github.com/zarbchain/kelk?branch=main#2c374c05ef2f81130d64cef805851f699407658b"
 dependencies = [
  "proc-macro2",
  "quote",

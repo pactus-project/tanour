@@ -1,8 +1,7 @@
-use std::ptr::NonNull;
-use std::sync::Arc;
-
 use loupe::MemoryUsage;
 use std::convert::TryInto;
+use std::ptr::NonNull;
+use std::sync::Arc;
 use wasmer::{
     vm::{self, MemoryError, MemoryStyle, TableStyle, VMMemoryDefinition, VMTableDefinition},
     MemoryType, Pages, TableType, Tunables,
@@ -32,7 +31,7 @@ impl<T: Tunables> LimitingTunables<T> {
     /// valid. However, this can produce invalid types, such that
     /// validate_memory must be called before creating the memory.
     fn adjust_memory(&self, requested: &MemoryType) -> MemoryType {
-        let mut adjusted = requested.clone();
+        let mut adjusted = *requested;
         if requested.maximum.is_none() {
             adjusted.maximum = Some(self.limit);
         }
@@ -154,8 +153,8 @@ pub fn limit_to_pages(limit: usize) -> Pages {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wasmer::{Singlepass, Universal};
     use wasmer::{imports, wat2wasm, BaseTunables, Instance, Memory, Module, Pages, Store, Target};
+    use wasmer::{Singlepass, Universal};
 
     #[test]
     fn test_tunables_limit_memory() -> Result<(), Box<dyn std::error::Error>> {

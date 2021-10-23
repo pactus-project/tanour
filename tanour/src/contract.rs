@@ -1,13 +1,10 @@
-use std::any::Any;
-use std::sync::{Arc, Mutex};
-
 use crate::error::{Error, Result};
-use crate::executor::{self, Executor};
+use crate::executor::Executor;
 use crate::provider_api::ProviderAPI;
 use crate::state::State;
-use crate::types::{Address, Bytes};
 use crate::wasmer;
 use minicbor::{Decode, Encode};
+use std::sync::{Arc, Mutex};
 
 const PAGE_SIZE: usize = 1024 * 1024; // 1 kilobyte
 
@@ -21,7 +18,7 @@ pub struct Contract<P> {
     /// Wasm executor
     executor: Box<dyn Executor>,
     /// State of the contract
-    state: Arc<Mutex<State<P>>>,
+    _state: Arc<Mutex<State<P>>>,
     /// FIXME -> Why we need the buffer?
     buffer: Vec<u8>,
 }
@@ -30,13 +27,13 @@ impl<P> Contract<P>
 where
     P: ProviderAPI,
 {
-    pub fn new(provider: P, code: &Bytes, memory_limit: u64) -> Result<Self> {
+    pub fn new(provider: P, code: &[u8], memory_limit: u64) -> Result<Self> {
         let state = Arc::new(Mutex::new(State::new(provider, PAGE_SIZE)));
         let executor = wasmer::WasmerExecutor::new(code, memory_limit, state.clone())?;
 
         Ok(Contract {
             executor: Box::new(executor),
-            state,
+            _state: state,
             buffer: Vec::new(),
         })
     }
