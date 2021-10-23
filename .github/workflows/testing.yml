@@ -1,0 +1,12 @@
+on: [push,pull_request]
+name: Testing
+
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Unit tests
+      run: cargo test
