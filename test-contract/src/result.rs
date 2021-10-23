@@ -1,6 +1,5 @@
 use minicbor::{Decode, Encode};
 
-
 #[derive(Clone, Debug, Decode, Encode, Eq, PartialEq)]
 #[cbor(array)]
 pub enum TestResponse {

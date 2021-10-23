@@ -20,12 +20,13 @@ pub fn write_buffer(ctx: ContextMut, vec: &[u8; 16]) -> Result<(), TestError> {
 }
 
 pub fn read_buffer(ctx: ContextMut) -> Result<Vec<u8>, TestError> {
-    let d = ctx.api
+    let d = ctx
+        .api
         .read_storage(0, 16)
         .map_err(|_| TestError::KelkError)?;
 
-        println!("data {:?}", d);
-        Ok(d)
+    println!("data {:?}", d);
+    Ok(d)
 }
 
 /// The "instantiate" will be executed only once on instantiating the contract actor
