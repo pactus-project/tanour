@@ -1,8 +1,8 @@
 [package]
 description = "Tanour"
 name = "tanour"
-version = "0.1.0"
-authors = ["mantre <mantre@protonmail.com>"]
+version = "0.2.0"
+authors = ["Zarb development team <admin@zarb.network>"]
 edition = "2018"
 
 [dependencies]

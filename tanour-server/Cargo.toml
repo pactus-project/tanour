@@ -1,7 +1,7 @@
 [package]
 name = "tanour-server"
 version = "0.1.0"
-authors = ["mantre <mantre@protonmail.com>"]
+authors = ["Zarb development team <admin@zarb.network>"]
 edition = "2018"
 
 build = "src/build.rs"
