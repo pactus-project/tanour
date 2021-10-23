@@ -9,11 +9,9 @@ pub struct ProviderMock {
 
 impl ProviderMock {
     pub fn new(storage_size: usize) -> Self {
-        let mut storage = Vec::with_capacity(storage_size);
-        for _ in 0..storage_size {
-            storage.push(0);
+        ProviderMock {
+            storage: vec![0; storage_size],
         }
-        ProviderMock { storage }
     }
 }
 

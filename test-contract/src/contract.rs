@@ -1,6 +1,6 @@
 use crate::message::TestMsg;
 use crate::result::{TestError, TestResponse};
-use kelk::{context::ContextMut};
+use kelk::context::ContextMut;
 
 fn mul(a: i32, b: i32) -> Result<i32, TestError> {
     Ok(a * b)
