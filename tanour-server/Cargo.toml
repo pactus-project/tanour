@@ -2,7 +2,7 @@
 name = "tanour-server"
 version = "0.1.0"
 authors = ["Zarb development team <admin@zarb.network>"]
-edition = "2018"
+edition = "2021"
 
 build = "src/build.rs"
 

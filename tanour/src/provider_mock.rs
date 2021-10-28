@@ -19,7 +19,7 @@ impl ProviderAPI for ProviderMock {
     fn read_storage(&self, offset: usize, length: usize) -> Result<Vec<u8>> {
         if offset + length > self.storage.len() {
             return Err(Error::StorageReadError {
-                msg: "Invalid offset".to_owned(),
+                msg: format!("Read failed. ({}, {}, {})", offset, length, self.storage.len()),
             });
         }
 

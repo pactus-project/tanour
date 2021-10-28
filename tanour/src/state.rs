@@ -15,7 +15,6 @@ pub struct State<P> {
     provider: P,
     page_size: usize,
     pages: HashMap<usize, Page>,
-    readonly: bool,
 }
 
 impl<P> State<P>
@@ -27,16 +26,17 @@ where
             provider,
             page_size,
             pages: HashMap::new(),
-            readonly: true,
         }
     }
 
-    fn get_page(&mut self, page_no: usize) -> Result<&mut Page> {
+    fn read_page(&mut self, page_no: usize) -> Result<&mut Page> {
+        println!("fn: read_page, page_no: {}", page_no);
         let offset = page_no * self.page_size;
 
         let page = match self.pages.entry(page_no) {
             Entry::Occupied(o) => o.into_mut(),
             Entry::Vacant(v) => {
+                println!("Try to read the storage. offset: {}, page_size: {}", offset, self.page_size);
                 let bytes = self.provider.read_storage(offset, self.page_size)?;
                 let page = Page::new(offset, self.page_size, bytes);
                 v.insert(page)
@@ -52,8 +52,9 @@ where
     P: ProviderAPI,
 {
     fn read_storage(&mut self, offset: usize, length: usize) -> Result<Vec<u8>> {
+        println!("fn: read_storage, offset: {}, length: {}", offset, length);
         let first_page = offset / self.page_size;
-        let last_page = offset + length / self.page_size;
+        let last_page = (offset + length) / self.page_size;
         let mut data = Vec::new();
         let mut read_offset = offset % self.page_size;
         let mut read_length = 0;
@@ -64,7 +65,7 @@ where
                 len = self.page_size - read_offset
             }
 
-            let page = self.get_page(page_no)?;
+            let page = self.read_page(page_no)?;
             data.extend_from_slice(&page.data[read_offset..read_offset + len]);
 
             read_offset = 0;
@@ -83,7 +84,7 @@ where
         let mut page_start_offset = offset % page_size;
 
         for page_no in first_page..last_page + 1 {
-            let page = self.get_page(page_no)?;
+            let page = self.read_page(page_no)?;
 
             let (_, right) = page.data.split_at_mut(page_start_offset);
             let mut buffer = right;

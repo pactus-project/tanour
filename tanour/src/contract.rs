@@ -39,7 +39,6 @@ where
     }
 
     pub fn call_process_msg<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
-        //self.state.make_readonly(false);
         let data = minicbor::to_vec(msg).map_err(|original| Error::SerializationError {
             msg: format!("{}", original),
         })?;
