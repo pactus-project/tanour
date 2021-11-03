@@ -8,6 +8,7 @@ use std::ptr::NonNull;
 use std::sync::Arc;
 use std::sync::Mutex;
 use wasmer::{Exports, Function, ImportObject, Val};
+use wasmer_middlewares::metering::MeteringPoints;
 
 #[derive(Debug, Clone)]
 pub struct ResultData {
@@ -22,12 +23,22 @@ pub struct WasmerExecutor {
     ///
     /// This instance should only be accessed via the Environment, which provides safe access.
     _instance: Box<wasmer::Instance>,
+
+    /// We wrap state inside `Env` which we'll pass to the imported functions.
     env: Env,
+
+    // The limit for metering middleware
+    metering_limit: u64,
 }
 
 impl WasmerExecutor {
-    pub fn new(code: &[u8], memory_limit: u64, state: Arc<Mutex<dyn StateTrait>>) -> Result<Self> {
-        let module = compile::compile(code, memory_limit)?;
+    pub fn new(
+        code: &[u8],
+        memory_limit: u64,
+        metering_limit: u64,
+        state: Arc<Mutex<dyn StateTrait>>,
+    ) -> Result<Self> {
+        let module = compile::compile(code, memory_limit, metering_limit)?;
         let store = module.store();
         let env = Env::new(state);
         let mut import_obj = ImportObject::new();
@@ -54,7 +65,11 @@ impl WasmerExecutor {
         let instance_ptr = NonNull::from(_instance.as_ref());
         env.set_instance(Some(instance_ptr));
 
-        Ok(WasmerExecutor { env, _instance })
+        Ok(WasmerExecutor {
+            _instance,
+            env,
+            metering_limit,
+        })
     }
 
     fn call_function(&self, name: &str, vals: &[Val]) -> Result<Box<[Val]>> {
@@ -116,6 +131,24 @@ impl executor::Executor for WasmerExecutor {
 
     fn read_ptr(&self, ptr: u32, len: usize) -> Result<Vec<u8>> {
         memory::read_ptr(&self.env.memory()?, ptr, len)
+    }
+
+    fn remaining_points(&self) -> Result<u64> {
+        match self.env.remaining_points()? {
+            MeteringPoints::Exhausted => Ok(0),
+            MeteringPoints::Remaining(points) => Ok(points),
+        }
+    }
+
+    fn consumed_points(&self) -> Result<u64> {
+        Ok(self.metering_limit - self.remaining_points()?)
+    }
+
+    fn exhausted(&self) -> Result<bool> {
+        match self.env.remaining_points()? {
+            MeteringPoints::Exhausted => Ok(true),
+            MeteringPoints::Remaining(_) => Ok(false),
+        }
     }
 }
 

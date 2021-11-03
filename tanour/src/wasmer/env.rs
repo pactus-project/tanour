@@ -7,6 +7,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 use wasmer::{HostEnvInitError, Instance as WasmerInstance, Memory, Val, WasmerEnv};
+use wasmer_middlewares::metering::{get_remaining_points, MeteringPoints};
 
 pub struct Context {
     /// A non-owning link to the wasmer instance
@@ -104,6 +105,10 @@ impl Env {
                 msg: format!("{}", original),
             })
         })
+    }
+
+    pub fn remaining_points(&self) -> Result<MeteringPoints> {
+        self.with_instance(|instance| Ok(get_remaining_points(&instance)))
     }
 }
 

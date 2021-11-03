@@ -4,17 +4,18 @@ use crate::wasmer::compile::compile;
 use wasmer::ImportObject;
 use wasmer::Pages;
 
-const ONE_KB: u64 = 1000;
-const ONE_MB: u64 = ONE_KB * 1000;
+const ONE_KB: u64 = 1024;
+const ONE_MB: u64 = ONE_KB * ONE_KB;
 
 fn make_env(
     wat: &str,
-    mem_limit: u64,
+    memory_limit: u64,
+    metering_limit: u64,
     resolver: &ImportObject,
     state: MockStateTrait,
 ) -> (Env, Box<WasmerInstance>) {
     let code = wat::parse_str(wat).unwrap();
-    let module = compile(&code, mem_limit).unwrap();
+    let module = compile(&code, memory_limit, metering_limit).unwrap();
     let instance = Box::new(wasmer::Instance::new(&module, &resolver).unwrap());
     let instance_ptr = NonNull::from(instance.as_ref());
     let env = Env::new(Arc::new(Mutex::new(state)));
@@ -42,11 +43,17 @@ fn test_exported_memory() {
     (memory 4)
     (export "memory" (memory 0))
 )"#;
-    let (env, _instance) = make_env(wat, ONE_MB, &ImportObject::new(), MockStateTrait::new());
+    let (env, _instance) = make_env(
+        wat,
+        ONE_MB,
+        1000,
+        &ImportObject::new(),
+        MockStateTrait::new(),
+    );
     let mem = env.memory().unwrap();
 
     assert_eq!(mem.ty().minimum, Pages(4));
-    assert_eq!(mem.ty().maximum, Some(Pages(15)));
+    assert_eq!(mem.ty().maximum, Some(Pages(16)));
 }
 
 #[test]
@@ -58,7 +65,7 @@ fn test_call_no_params() {
     (export "nope" (func $nope))
 )"#;
 
-    let (env, _instance) = make_env(wat, 0, &ImportObject::new(), MockStateTrait::new());
+    let (env, _instance) = make_env(wat, 0, 1000, &ImportObject::new(), MockStateTrait::new());
     let res = env.call_function("nope", &[]);
     assert!(res.is_ok());
 }
@@ -77,7 +84,7 @@ fn test_call_with_params() {
     (export "add" (func $add))
 )"#;
 
-    let (env, _instance) = make_env(wat, 0, &ImportObject::new(), MockStateTrait::new());
+    let (env, _instance) = make_env(wat, 0, 1000, &ImportObject::new(), MockStateTrait::new());
 
     let res = env
         .call_function("add", &[Val::I32(1), Val::I32(2)])

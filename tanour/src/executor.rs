@@ -12,4 +12,8 @@ pub trait Executor {
 
     fn write_ptr(&self, ptr: u32, data: &[u8]) -> Result<()>;
     fn read_ptr(&self, ptr: u32, len: usize) -> Result<Vec<u8>>;
+
+    fn remaining_points(&self) -> Result<u64>;
+    fn consumed_points(&self) -> Result<u64>;
+    fn exhausted(&self) -> Result<bool>;
 }
