@@ -10,11 +10,9 @@ jobs:
 
     # We can delete this part in future
     - name: Installing nightly
-      run: rustup default nightly
-
-    # We can delete this part in future
-    - name: Installing nightly
-      run: rustup component add rustfmt
+      run: rustup default nightly && \
+        rustup component add rustfmt && \
+        rustup component add clippy
 
     - name: fmt check
       run: cargo +nightly fmt --all -- --check
