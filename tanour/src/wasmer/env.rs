@@ -108,7 +108,7 @@ impl Env {
     }
 
     pub fn remaining_points(&self) -> Result<MeteringPoints> {
-        self.with_instance(|instance| Ok(get_remaining_points(&instance)))
+        self.with_instance(|instance| Ok(get_remaining_points(instance)))
     }
 }
 
