@@ -8,8 +8,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+      # We can delete this part in future
+    - name: Installing nightly
+      run: rustup default nightly
+
     - name: fmt check
-      run: cargo fmt --all -- --check
+      run: cargo +nightly fmt --all -- --check
 
     - name: Clippy check
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      run: cargo +nightly clippy --all-targets --all-features -- -D warnings
