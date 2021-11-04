@@ -21,7 +21,8 @@ jobs:
 
     # Compining test-contract
     - name: Compiling test-contract
-      run: cd test-contract && \
+      run: |
+        cd test-contract
         cargo +nightly build --target wasm32-unknown-unknown --release -Z unstable-options --out-dir ./wasm
 
     - name: Unit tests
