@@ -10,7 +10,8 @@ fn test_call_process_msg() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
     let code = wat::parse_bytes(wat).unwrap().to_vec();
 
-    let provider = ProviderMock::new(1024 * 1024);
+    //TODO: define const for Mega and Kilo
+    let provider = ProviderMock::new(1024);
     let mut contract = Contract::new(provider, &code, 1000000).unwrap();
 
     let msg = TestMsg::Mul { a: 2, b: 2 };
@@ -30,12 +31,22 @@ fn test_read_write_storage() {
     let provider = ProviderMock::new(1024 * 1024);
     let mut contract = Contract::new(provider, &code, 1000000).unwrap();
 
-    let vec = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    let msg = "hello world!".as_bytes();
     let _: Result<TestResponse, TestError> = contract
-        .call_process_msg(&TestMsg::WriteBuffer(vec))
+        .call_process_msg(&TestMsg::WriteData {
+            offset: 0,
+            data: msg.to_vec(),
+        })
         .unwrap();
 
-    let res: Result<TestResponse, TestError> =
-        contract.call_process_msg(&TestMsg::ReadBuffer).unwrap();
-    assert_eq!(res.unwrap(), TestResponse::Buffer(vec.to_vec()));
+    let res: Result<TestResponse, TestError> = contract
+        .call_process_msg(&TestMsg::ReadData {
+            offset: 6,
+            length: 5,
+        })
+        .unwrap();
+    assert_eq!(
+        res.unwrap(),
+        TestResponse::Buffer("world".as_bytes().to_vec()),
+    );
 }

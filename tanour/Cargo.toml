@@ -3,7 +3,7 @@ description = "Tanour"
 name = "tanour"
 version = "0.2.0"
 authors = ["Zarb development team <admin@zarb.network>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 byteorder = "1.3"

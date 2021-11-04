@@ -13,20 +13,16 @@ fn div(a: i32, b: i32) -> Result<i32, TestError> {
     Ok(a / b)
 }
 
-fn write_buffer(ctx: ContextMut, vec: &[u8; 16]) -> Result<(), TestError> {
+fn write_buffer(ctx: ContextMut, offset: u32, data: &[u8]) -> Result<(), TestError> {
     ctx.api
-        .write_storage(0, vec)
+        .write_storage(offset, data)
         .map_err(|_| TestError::KelkError)
 }
 
-fn read_buffer(ctx: ContextMut) -> Result<Vec<u8>, TestError> {
-    let d = ctx
-        .api
-        .read_storage(0, 16)
-        .map_err(|_| TestError::KelkError)?;
-
-    println!("data {:?}", d);
-    Ok(d)
+fn read_buffer(ctx: ContextMut, offset: u32, length: u32) -> Result<Vec<u8>, TestError> {
+    ctx.api
+        .read_storage(offset, length)
+        .map_err(|_| TestError::KelkError)
 }
 
 /// The "instantiate" will be executed only once on instantiating the contract actor
@@ -57,11 +53,13 @@ pub fn process_msg(ctx: ContextMut, msg: TestMsg) -> Result<TestResponse, TestEr
     let res = match msg {
         TestMsg::Mul { a, b } => TestResponse::I32 { value: mul(a, b)? },
         TestMsg::Div { a, b } => TestResponse::I32 { value: div(a, b)? },
-        TestMsg::WriteBuffer(buf) => {
-            write_buffer(ctx, &buf)?;
+        TestMsg::WriteData { offset, data } => {
+            write_buffer(ctx, offset, &data)?;
             TestResponse::Null
         }
-        TestMsg::ReadBuffer => TestResponse::Buffer(read_buffer(ctx)?),
+        TestMsg::ReadData { offset, length } => {
+            TestResponse::Buffer(read_buffer(ctx, offset, length)?)
+        }
     };
 
     Ok(res)

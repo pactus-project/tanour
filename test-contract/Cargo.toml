@@ -1,8 +1,8 @@
 [package]
 name = "test_contract"
 version = "0.2.0"
-edition = "2018"
 authors = ["Zarb development team <admin@zarb.network>"]
+edition = "2021"
 
 [dependencies]
 kelk = { version = "0.0.5", git = "https://github.com/zarbchain/kelk", branch = "main"}

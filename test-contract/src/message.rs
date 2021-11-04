@@ -17,8 +17,18 @@ pub enum TestMsg {
         b: i32,
     },
     #[n(2)]
-    WriteBuffer(#[n(0)] [u8; 16]),
+    WriteData {
+        #[n(0)]
+        offset: u32,
+        #[n(1)]
+        data: Vec<u8>,
+    },
 
     #[n(3)]
-    ReadBuffer,
+    ReadData {
+        #[n(0)]
+        offset: u32,
+        #[n(1)]
+        length: u32,
+    },
 }
