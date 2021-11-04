@@ -36,7 +36,10 @@ where
         let page = match self.pages.entry(page_no) {
             Entry::Occupied(o) => o.into_mut(),
             Entry::Vacant(v) => {
-                println!("Try to read the storage. offset: {}, page_size: {}", offset, self.page_size);
+                println!(
+                    "Try to read the storage. offset: {}, page_size: {}",
+                    offset, self.page_size
+                );
                 let bytes = self.provider.read_storage(offset, self.page_size)?;
                 let page = Page::new(offset, self.page_size, bytes);
                 v.insert(page)
