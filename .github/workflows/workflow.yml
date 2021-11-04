@@ -6,10 +6,10 @@ on:
     branches:
     - main
 
-name: Coverage
+name: Coverage and linting
 
 jobs:
-  coverage:
+  all:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
