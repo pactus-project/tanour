@@ -15,9 +15,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # We can delete this part in future
+    # Installing nightly and wasm32 target
     - name: Installing nightly
-      run: rustup default nightly
+      run: rustup toolchain install nightly --target wasm32-unknown-unknown
+
+    # Compining test-contract
+    - name: Compiling test-contract
+      run: cd test-contract && \
+        cargo +nightly build --target wasm32-unknown-unknown --release -Z unstable-options --out-dir ./wasm
 
     - name: Unit tests
       run: cargo +nightly test
