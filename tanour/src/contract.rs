@@ -27,9 +27,10 @@ impl<P> Contract<P>
 where
     P: ProviderAPI,
 {
-    pub fn new(provider: P, code: &[u8], memory_limit: u64) -> Result<Self> {
+    pub fn new(provider: P, code: &[u8], memory_limit: u64, metering_limit: u64) -> Result<Self> {
         let state = Arc::new(Mutex::new(State::new(provider, PAGE_SIZE)));
-        let executor = wasmer::WasmerExecutor::new(code, memory_limit, state.clone())?;
+        let executor =
+            wasmer::WasmerExecutor::new(code, memory_limit, metering_limit, state.clone())?;
 
         Ok(Contract {
             executor: Box::new(executor),
@@ -68,6 +69,18 @@ where
 
     fn deallocate(&self, ptr: u32) -> Result<()> {
         self.executor.call_fn_1("deallocate", ptr)
+    }
+
+    pub fn remaining_points(&self) -> Result<u64> {
+        self.executor.remaining_points()
+    }
+
+    pub fn consumed_points(&self) -> Result<u64> {
+        self.executor.consumed_points()
+    }
+
+    pub fn exhausted(&self) -> Result<bool> {
+        self.executor.exhausted()
     }
 }
 
