@@ -17,12 +17,12 @@ fn test_call_process_msg() {
     let msg = TestMsg::Mul { a: 2, b: 2 };
     let res: Result<TestResponse, TestError> = contract.call_process_msg(&msg).unwrap();
     assert_eq!(res.unwrap(), TestResponse::I32 { value: 4 });
-    assert_eq!(contract.consumed_points().unwrap(), 1998);
+    assert_eq!(contract.consumed_points().unwrap(), 3173);
 
     let msg = TestMsg::Div { a: 2, b: 0 };
     let res: Result<TestResponse, TestError> = contract.call_process_msg(&msg).unwrap();
     assert!(res.is_err());
-    assert_eq!(contract.consumed_points().unwrap(), 3812);
+    assert_eq!(contract.consumed_points().unwrap(), 6172);
 }
 
 #[test]
@@ -40,7 +40,7 @@ fn test_read_write_storage() {
             data: msg.to_vec(),
         })
         .unwrap();
-    assert_eq!(contract.consumed_points().unwrap(), 5095);
+    assert_eq!(contract.consumed_points().unwrap(), 6651);
 
     let res: Result<TestResponse, TestError> = contract
         .call_process_msg(&TestMsg::ReadData {
@@ -52,6 +52,6 @@ fn test_read_write_storage() {
         res.unwrap(),
         TestResponse::Buffer("world".as_bytes().to_vec()),
     );
-    assert_eq!(contract.consumed_points().unwrap(), 8710);
+    assert_eq!(contract.consumed_points().unwrap(), 11030);
     assert!(!contract.exhausted().unwrap());
 }

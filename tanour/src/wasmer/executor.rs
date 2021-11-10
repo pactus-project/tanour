@@ -3,6 +3,7 @@ use super::native::*;
 use super::{compile, memory};
 use crate::error::{Error, Result};
 use crate::executor;
+use crate::memory::Pointer;
 use crate::state::StateTrait;
 use std::ptr::NonNull;
 use std::sync::Arc;
@@ -78,8 +79,8 @@ impl WasmerExecutor {
 }
 
 impl executor::Executor for WasmerExecutor {
-    fn call_fn_1(&self, name: &str, arg: u32) -> Result<()> {
-        let val = wasmer::Val::I32(arg as i32);
+    fn call_fn_0(&self, name: &str, arg: u64) -> Result<()> {
+        let val = wasmer::Val::I64(arg as i64);
         let result = self.call_function(name, &[val])?;
 
         match result.first() {
@@ -90,27 +91,9 @@ impl executor::Executor for WasmerExecutor {
         }
     }
 
-    fn call_fn_2(&self, name: &str, arg: u32) -> Result<u32> {
-        let val = wasmer::Val::I32(arg as i32);
+    fn call_fn_1(&self, name: &str, arg: u64) -> Result<u64> {
+        let val = wasmer::Val::I64(arg as i64);
         let result = self.call_function(name, &[val])?;
-
-        match result.first() {
-            Some(val) => match val {
-                Val::I32(i32) => Ok(*i32 as u32),
-                _ => Err(Error::RuntimeError {
-                    msg: format!("Invalid return value for {}", name),
-                }),
-            },
-            None => Err(Error::RuntimeError {
-                msg: format!("No return value for {}", name),
-            }),
-        }
-    }
-
-    fn call_fn_3(&self, name: &str, arg1: u32, arg2: u32) -> Result<u64> {
-        let val1 = wasmer::Val::I32(arg1 as i32);
-        let val2 = wasmer::Val::I32(arg2 as i32);
-        let result = self.call_function(name, &[val1, val2])?;
 
         match result.first() {
             Some(val) => match val {
@@ -125,12 +108,29 @@ impl executor::Executor for WasmerExecutor {
         }
     }
 
-    fn write_ptr(&self, ptr: u32, data: &[u8]) -> Result<()> {
-        memory::write_ptr(&self.env.memory()?, ptr, data)
+    fn call_fn_2(&self, name: &str, arg: u32) -> Result<u64> {
+        let val = wasmer::Val::I32(arg as i32);
+        let result = self.call_function(name, &[val])?;
+
+        match result.first() {
+            Some(val) => match val {
+                Val::I64(i64) => Ok(*i64 as u64),
+                _ => Err(Error::RuntimeError {
+                    msg: format!("Invalid return value for {}", name),
+                }),
+            },
+            None => Err(Error::RuntimeError {
+                msg: format!("No return value for {}", name),
+            }),
+        }
     }
 
-    fn read_ptr(&self, ptr: u32, len: usize) -> Result<Vec<u8>> {
-        memory::read_ptr(&self.env.memory()?, ptr, len)
+    fn write_ptr(&self, ptr: &Pointer, data: &[u8]) -> Result<()> {
+        memory::write_ptr(&self.env.memory()?, ptr.offset(), data)
+    }
+
+    fn read_ptr(&self, ptr: &Pointer) -> Result<Vec<u8>> {
+        memory::read_ptr(&self.env.memory()?, ptr.offset(), ptr.length())
     }
 
     fn remaining_points(&self) -> Result<u64> {
@@ -151,7 +151,3 @@ impl executor::Executor for WasmerExecutor {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "./executor_test.rs"]
-mod tests;
