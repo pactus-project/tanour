@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
 use crate::executor::Executor;
+use crate::memory::Pointer;
 use crate::provider_api::ProviderAPI;
 use crate::state::State;
 use crate::wasmer;
@@ -40,35 +41,36 @@ where
     }
 
     pub fn call_process_msg<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
-        let data = minicbor::to_vec(msg).map_err(|original| Error::SerializationError {
+        let param_data = minicbor::to_vec(msg).map_err(|original| Error::SerializationError {
             msg: format!("{}", original),
         })?;
-        let size = data.len() as u32;
-        let ptr = self.allocate(size)?;
+        let size = param_data.len() as u32;
+        let ptr_64 = self.allocate(size)?;
 
-        self.executor.write_ptr(ptr, &data)?;
+        let ptr = Pointer::from_u64(ptr_64);
+        self.executor.write_ptr(&ptr, &param_data)?;
 
-        let region = self.executor.call_fn_3("process_msg", ptr, size)?;
+        let result_ptr = self.executor.call_fn_1("process_msg", ptr_64)?;
 
-        self.deallocate(ptr)?;
-        self.region_to_result(region)
+        self.deallocate(ptr_64)?;
+        self.ptr_to_result(result_ptr)
     }
 
-    fn region_to_result<'a, D: Decode<'a>>(&'a mut self, pointer: u64) -> Result<D> {
-        let len = (pointer >> 32) as u32;
-        let ptr = (pointer & 0xFFFFFFFF) as u32;
-        self.buffer = self.executor.read_ptr(ptr, len as usize)?;
+    fn ptr_to_result<'a, D: Decode<'a>>(&'a mut self, ptr_64: u64) -> Result<D> {
+        let ptr = Pointer::from_u64(ptr_64);
+        self.buffer = self.executor.read_ptr(&ptr)?;
+
         minicbor::decode(&self.buffer).map_err(|original| Error::SerializationError {
             msg: format!("{}", original),
         })
     }
 
-    fn allocate(&self, size: u32) -> Result<u32> {
+    fn allocate(&self, size: u32) -> Result<u64> {
         self.executor.call_fn_2("allocate", size)
     }
 
-    fn deallocate(&self, ptr: u32) -> Result<()> {
-        self.executor.call_fn_1("deallocate", ptr)
+    fn deallocate(&self, ptr_64: u64) -> Result<()> {
+        self.executor.call_fn_0("deallocate", ptr_64)
     }
 
     pub fn remaining_points(&self) -> Result<u64> {

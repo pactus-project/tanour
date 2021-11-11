@@ -20,9 +20,6 @@ pub enum Error {
     #[error("Memory error: {}", msg)]
     MemoryError { msg: String },
 
-    #[error("Invalid memory region: {}", msg)]
-    InvalidRegion { msg: String },
-
     #[error("Serialization error: {}", msg)]
     SerializationError { msg: String },
 }

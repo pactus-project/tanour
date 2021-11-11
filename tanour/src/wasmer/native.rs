@@ -3,7 +3,7 @@ use crate::error::Result;
 
 pub fn native_write_storage(env: &Env, offset: u32, ptr: u32, len: u32) -> Result<u32> {
     let mem = env.memory()?;
-    let data = memory::read_ptr(&mem, ptr, len as usize)?;
+    let data = memory::read_ptr(&mem, ptr, len)?;
     env.state
         .lock()
         .unwrap()

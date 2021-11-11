@@ -347,24 +347,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "kelk"
-version = "0.0.5"
-source = "git+https://github.com/zarbchain/kelk?branch=main#2c374c05ef2f81130d64cef805851f699407658b"
+name = "kelk-derive"
+version = "0.2.0"
+source = "git+https://github.com/zarbchain/kelk?branch=main#94e19598d4606d1a4fd52b1450eb6cad9033a4ae"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "kelk-env"
+version = "0.2.0"
+source = "git+https://github.com/zarbchain/kelk?branch=main#94e19598d4606d1a4fd52b1450eb6cad9033a4ae"
 dependencies = [
  "kelk-derive",
  "minicbor",
  "minicbor-derive",
  "wee_alloc",
-]
-
-[[package]]
-name = "kelk-derive"
-version = "0.1.0"
-source = "git+https://github.com/zarbchain/kelk?branch=main#2c374c05ef2f81130d64cef805851f699407658b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -955,8 +955,9 @@ checksum = "76565a2f8df1d2170b5c365aa39d0623fd93fec20545edde299233cea82d0f16"
 name = "test_contract"
 version = "0.2.0"
 dependencies = [
- "kelk",
+ "kelk-env",
  "minicbor",
+ "wee_alloc",
 ]
 
 [[package]]

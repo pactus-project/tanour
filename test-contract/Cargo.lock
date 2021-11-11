@@ -15,24 +15,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac5956d4e63858efaec57e0d6c1c2f6a41e1487f830314a324ccd7e2223a7ca0"
 
 [[package]]
-name = "kelk"
-version = "0.0.5"
-source = "git+https://github.com/zarbchain/kelk?branch=main#2c374c05ef2f81130d64cef805851f699407658b"
+name = "kelk-derive"
+version = "0.2.0"
+source = "git+https://github.com/zarbchain/kelk?branch=main#94e19598d4606d1a4fd52b1450eb6cad9033a4ae"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "kelk-env"
+version = "0.2.0"
+source = "git+https://github.com/zarbchain/kelk?branch=main#94e19598d4606d1a4fd52b1450eb6cad9033a4ae"
 dependencies = [
  "kelk-derive",
  "minicbor",
  "minicbor-derive",
  "wee_alloc",
-]
-
-[[package]]
-name = "kelk-derive"
-version = "0.1.0"
-source = "git+https://github.com/zarbchain/kelk?branch=main#2c374c05ef2f81130d64cef805851f699407658b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -101,8 +101,9 @@ dependencies = [
 name = "test_contract"
 version = "0.2.0"
 dependencies = [
- "kelk",
+ "kelk-env",
  "minicbor",
+ "wee_alloc",
 ]
 
 [[package]]
