@@ -16,9 +16,10 @@ jobs:
       - name: Install Rust
         run: |
           rustup toolchain install nightly --component llvm-tools-preview rustfmt clippy
+          # Installing wasm32 target for compiling the test-contract
           rustup toolchain install nightly --target wasm32-unknown-unknown
 
-      # Compining test-contract
+      # Compiling the test-contract
       - name: Compiling test-contract
         run: |
           cd test-contract
@@ -33,7 +34,6 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: lcov.info
           fail_ci_if_error: true
 
