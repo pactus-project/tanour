@@ -1,9 +1,5 @@
-use test_contract::{
-    message::TestMsg,
-    result::{TestError, TestResponse},
-};
-
 use crate::{contract::Contract, provider_api::provider_mock::ProviderMock};
+use test_contract::message::{ProcMsg, QueryMsg, QueryRsp, TestError};
 
 #[test]
 fn test_call_process_msg() {
@@ -14,15 +10,10 @@ fn test_call_process_msg() {
     let provider = ProviderMock::new(1024 * 1024);
     let mut contract = Contract::new(provider, &code, 1000000, 100000).unwrap();
 
-    let msg = TestMsg::Mul { a: 2, b: 2 };
-    let res: Result<TestResponse, TestError> = contract.call_process_msg(&msg).unwrap();
-    assert_eq!(res.unwrap(), TestResponse::I32 { value: 4 });
-    assert_eq!(contract.consumed_points().unwrap(), 3173);
-
-    let msg = TestMsg::Div { a: 2, b: 0 };
-    let res: Result<TestResponse, TestError> = contract.call_process_msg(&msg).unwrap();
-    assert!(res.is_err());
-    assert_eq!(contract.consumed_points().unwrap(), 6172);
+    let msg = ProcMsg::Null;
+    let res: Result<(), TestError> = contract.call_process_msg(&msg).unwrap();
+    assert!(res.is_ok());
+    assert_eq!(contract.consumed_points().unwrap(), 2861);
 }
 
 #[test]
@@ -34,24 +25,21 @@ fn test_read_write_storage() {
     let mut contract = Contract::new(provider, &code, 1000000, 100000).unwrap();
 
     let msg = "hello world!".as_bytes();
-    let _: Result<TestResponse, TestError> = contract
-        .call_process_msg(&TestMsg::WriteData {
+    let _: Result<(), TestError> = contract
+        .call_process_msg(&ProcMsg::WriteData {
             offset: 0,
             data: msg.to_vec(),
         })
         .unwrap();
-    assert_eq!(contract.consumed_points().unwrap(), 6651);
+    assert_eq!(contract.consumed_points().unwrap(), 6574);
 
-    let res: Result<TestResponse, TestError> = contract
-        .call_process_msg(&TestMsg::ReadData {
+    let res: Result<QueryRsp, TestError> = contract
+        .call_query(&QueryMsg::ReadData {
             offset: 6,
             length: 5,
         })
         .unwrap();
-    assert_eq!(
-        res.unwrap(),
-        TestResponse::Buffer("world".as_bytes().to_vec()),
-    );
-    assert_eq!(contract.consumed_points().unwrap(), 11030);
+    assert_eq!(res.unwrap(), QueryRsp::Buffer("world".as_bytes().to_vec()),);
+    assert_eq!(contract.consumed_points().unwrap(), 10736);
     assert!(!contract.exhausted().unwrap());
 }
