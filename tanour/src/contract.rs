@@ -40,7 +40,11 @@ where
         })
     }
 
-    pub fn call_process_msg<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
+    fn call_exported_fn<'a, E: Encode, D: Decode<'a>>(
+        &'a mut self,
+        msg: E,
+        fname: &str,
+    ) -> Result<D> {
         let param_data = minicbor::to_vec(msg).map_err(|original| Error::SerializationError {
             msg: format!("{}", original),
         })?;
@@ -50,10 +54,18 @@ where
         let ptr = Pointer::from_u64(ptr_64);
         self.executor.write_ptr(&ptr, &param_data)?;
 
-        let result_ptr = self.executor.call_fn_1("process_msg", ptr_64)?;
+        let result_ptr = self.executor.call_fn_1(fname, ptr_64)?;
 
         self.deallocate(ptr_64)?;
         self.ptr_to_result(result_ptr)
+    }
+
+    pub fn call_process_msg<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
+        self.call_exported_fn(msg, "process_msg")
+    }
+
+    pub fn call_query<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
+        self.call_exported_fn(msg, "query")
     }
 
     fn ptr_to_result<'a, D: Decode<'a>>(&'a mut self, ptr_64: u64) -> Result<D> {

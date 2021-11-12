@@ -206,6 +206,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "524cbf6897b527295dff137cec09ecf3a05f4fddffd7dfcd1585403449e74198"
 
 [[package]]
+name = "doc-comment"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
+
+[[package]]
 name = "downcast"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -349,7 +355,7 @@ dependencies = [
 [[package]]
 name = "kelk-derive"
 version = "0.2.0"
-source = "git+https://github.com/zarbchain/kelk?branch=main#94e19598d4606d1a4fd52b1450eb6cad9033a4ae"
+source = "git+https://github.com/zarbchain/kelk?branch=main#61c8617c4ab8f9d71851af984b226faa3e6d3237"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -358,13 +364,21 @@ dependencies = [
 
 [[package]]
 name = "kelk-env"
-version = "0.2.0"
-source = "git+https://github.com/zarbchain/kelk?branch=main#94e19598d4606d1a4fd52b1450eb6cad9033a4ae"
+version = "0.2.1"
+source = "git+https://github.com/zarbchain/kelk?branch=main#61c8617c4ab8f9d71851af984b226faa3e6d3237"
 dependencies = [
  "kelk-derive",
+ "kelk-lib",
  "minicbor",
  "minicbor-derive",
- "wee_alloc",
+]
+
+[[package]]
+name = "kelk-lib"
+version = "0.2.0"
+source = "git+https://github.com/zarbchain/kelk?branch=main#61c8617c4ab8f9d71851af984b226faa3e6d3237"
+dependencies = [
+ "doc-comment",
 ]
 
 [[package]]
