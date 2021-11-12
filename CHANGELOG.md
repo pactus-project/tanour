@@ -4,6 +4,7 @@
 
 - Adding metering middleware
 - Adding memory pointer to define the allocated memory space
+- Adding query API
 
 
 ## 0.1.0
