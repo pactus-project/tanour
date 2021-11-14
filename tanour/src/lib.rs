@@ -1,6 +1,7 @@
 pub mod contract;
 pub mod error;
 pub mod provider_api;
+pub mod provider_mock;
 
 mod executor;
 mod memory;

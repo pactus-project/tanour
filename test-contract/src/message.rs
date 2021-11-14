@@ -1,6 +1,9 @@
 use minicbor::{Decode, Encode};
 
 #[derive(Clone, Debug, Encode, Decode)]
+pub struct InstantiateMsg {}
+
+#[derive(Clone, Debug, Encode, Decode)]
 pub enum ProcMsg {
     #[n(0)]
     Null,
@@ -22,6 +25,11 @@ pub enum QueryMsg {
         #[n(1)]
         length: u32,
     },
+    #[n(1)]
+    Hash {
+        #[n(0)]
+        data: Vec<u8>,
+    },
 }
 
 #[derive(Clone, Debug, Decode, Encode, Eq, PartialEq)]
@@ -33,8 +41,7 @@ pub enum QueryRsp {
 #[derive(Clone, Debug, Decode, Encode)]
 pub enum TestError {
     #[b(0)]
-    DivByZero,
-
-    #[b(100)]
     KelkError,
+    #[b(1)]
+    DivByZero,
 }
