@@ -1,4 +1,6 @@
-use crate::message::{ProcMsg, QueryMsg, QueryRsp, TestError};
+use crate::message::{InstantiateMsg, ProcMsg, QueryMsg, QueryRsp, TestError};
+use blake2::digest::{Update, VariableOutput};
+use blake2::VarBlake2b;
 use kelk_env::context::Context;
 
 fn null(_ctx: Context) -> Result<(), TestError> {
@@ -17,12 +19,20 @@ fn read_buffer(ctx: Context, offset: u32, length: u32) -> Result<Vec<u8>, TestEr
         .map_err(|_| TestError::KelkError)
 }
 
+fn get_hash(_ctx: Context, data: Vec<u8>) -> Result<Vec<u8>, TestError> {
+    let mut hasher = VarBlake2b::new(32).unwrap();
+    hasher.update(data);
+    let res = hasher.finalize_boxed().to_vec();
+
+    Ok(res)
+}
+
 /// The "instantiate" will be executed only once on instantiating the contract actor
 #[cfg(target_arch = "wasm32")]
 mod __wasm_export_instantiate {
     #[no_mangle]
-    extern "C" fn instantiate() -> u32 {
-        kelk_env::do_instantiate(&super::instantiate)
+    extern "C" fn instantiate(msg_ptr: u64) -> u64 {
+        kelk_env::do_instantiate(&super::instantiate, msg_ptr)
     }
 }
 
@@ -43,7 +53,7 @@ mod __wasm_export_query {
 }
 
 // #[kelk_derive(instantiate)]
-pub fn instantiate(_ctx: Context) -> Result<(), TestError> {
+pub fn instantiate(_ctx: Context, _msg: InstantiateMsg) -> Result<(), TestError> {
     Ok(())
 }
 
@@ -59,5 +69,6 @@ pub fn query(ctx: Context, msg: QueryMsg) -> Result<QueryRsp, TestError> {
         QueryMsg::ReadData { offset, length } => {
             Ok(QueryRsp::Buffer(read_buffer(ctx, offset, length)?))
         }
+        QueryMsg::Hash { data } => Ok(QueryRsp::Buffer(get_hash(ctx, data)?)),
     }
 }

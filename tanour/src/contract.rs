@@ -50,14 +50,22 @@ where
         })?;
         let size = param_data.len() as u32;
         let ptr_64 = self.allocate(size)?;
-
         let ptr = Pointer::from_u64(ptr_64);
         self.executor.write_ptr(&ptr, &param_data)?;
 
-        let result_ptr = self.executor.call_fn_1(fname, ptr_64)?;
-
+        let res_ptr_64 = self.executor.call_fn_1(fname, ptr_64)?;
         self.deallocate(ptr_64)?;
-        self.ptr_to_result(result_ptr)
+
+        // Decoding result (result to pointer)
+        let res_ptr = Pointer::from_u64(res_ptr_64);
+        self.buffer = self.executor.read_ptr(&res_ptr)?;
+        minicbor::decode(&self.buffer).map_err(|original| Error::SerializationError {
+            msg: format!("{}", original),
+        })
+    }
+
+    pub fn call_instantiate<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
+        self.call_exported_fn(msg, "instantiate")
     }
 
     pub fn call_process_msg<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
@@ -66,15 +74,6 @@ where
 
     pub fn call_query<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
         self.call_exported_fn(msg, "query")
-    }
-
-    fn ptr_to_result<'a, D: Decode<'a>>(&'a mut self, ptr_64: u64) -> Result<D> {
-        let ptr = Pointer::from_u64(ptr_64);
-        self.buffer = self.executor.read_ptr(&ptr)?;
-
-        minicbor::decode(&self.buffer).map_err(|original| Error::SerializationError {
-            msg: format!("{}", original),
-        })
     }
 
     fn allocate(&self, size: u32) -> Result<u64> {
@@ -97,7 +96,3 @@ where
         self.executor.exhausted()
     }
 }
-
-#[cfg(test)]
-#[path = "./contract_test.rs"]
-mod tests;

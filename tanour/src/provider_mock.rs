@@ -1,5 +1,4 @@
-#[cfg(test)]
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::provider_api::*;
 
 #[derive(Debug, Clone)]

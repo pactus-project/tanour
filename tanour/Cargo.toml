@@ -24,6 +24,8 @@ simple_logger = "1.4.0"
 wat = "1"
 test_contract = { path = "../test-contract" }
 mockall = "0.10"
+blake2 = "0.9"
+hex-literal = "0.3"
 
 [lib]
 path = "src/lib.rs"

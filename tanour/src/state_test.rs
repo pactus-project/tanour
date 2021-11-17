@@ -1,5 +1,5 @@
 use crate::{
-    provider_api::provider_mock::ProviderMock,
+    provider_mock::ProviderMock,
     state::{State, StateTrait},
 };
 
