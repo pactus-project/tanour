@@ -57,7 +57,7 @@ impl WasmerExecutor {
 
         env_imports.insert(
             "get_param",
-            Function::new_native_with_env(store, env.clone(), native_read_storage),
+            Function::new_native_with_env(store, env.clone(), native_get_param),
         );
 
         import_obj.register("zarb", env_imports);
