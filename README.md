@@ -17,7 +17,7 @@ Contract in Zarb are like Actors in the [Actor model](https://en.wikipedia.org/w
 
 Each contract actor:
  - Can be instantiated through the `instantiate` method.
- - Can process the message it receives through `process_msg` method.
+ - Can process the message it receives through `process` method.
  - Can concurrently send a message to another contract actor through the `send_msg` method.
 
 These are the only methods that each contract can expose to the outside world.

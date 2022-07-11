@@ -40,7 +40,7 @@ where
         })
     }
 
-    fn call_exported_fn<'a, E: Encode, D: Decode<'a>>(
+    fn call_exported_fn<'a, E: Encode<()>, D: Decode<'a, ()>>(
         &'a mut self,
         msg: E,
         fname: &str,
@@ -64,15 +64,18 @@ where
         })
     }
 
-    pub fn call_instantiate<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
+    pub fn call_instantiate<'a, E: Encode<()>, D: Decode<'a, ()>>(
+        &'a mut self,
+        msg: E,
+    ) -> Result<D> {
         self.call_exported_fn(msg, "instantiate")
     }
 
-    pub fn call_process_msg<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
-        self.call_exported_fn(msg, "process_msg")
+    pub fn call_process<'a, E: Encode<()>, D: Decode<'a, ()>>(&'a mut self, msg: E) -> Result<D> {
+        self.call_exported_fn(msg, "process")
     }
 
-    pub fn call_query<'a, E: Encode, D: Decode<'a>>(&'a mut self, msg: E) -> Result<D> {
+    pub fn call_query<'a, E: Encode<()>, D: Decode<'a, ()>>(&'a mut self, msg: E) -> Result<D> {
         self.call_exported_fn(msg, "query")
     }
 

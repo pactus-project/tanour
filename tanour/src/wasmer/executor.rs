@@ -55,6 +55,11 @@ impl WasmerExecutor {
             Function::new_native_with_env(store, env.clone(), native_read_storage),
         );
 
+        env_imports.insert(
+            "get_param",
+            Function::new_native_with_env(store, env.clone(), native_read_storage),
+        );
+
         import_obj.register("zarb", env_imports);
 
         let _instance = Box::new(wasmer::Instance::new(&module, &import_obj).map_err(

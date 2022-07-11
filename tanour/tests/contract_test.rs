@@ -3,7 +3,7 @@ use tanour::{contract::Contract, provider_mock::ProviderMock};
 use test_contract::message::{ProcMsg, QueryMsg, QueryRsp, TestError};
 
 #[test]
-fn test_call_process_msg() {
+fn test_call_process() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
     let code = wat::parse_bytes(wat).unwrap().to_vec();
 
@@ -12,9 +12,9 @@ fn test_call_process_msg() {
     let mut contract = Contract::new(provider, &code, 1000000, 100000).unwrap();
 
     let msg = ProcMsg::Null;
-    let res: Result<(), TestError> = contract.call_process_msg(&msg).unwrap();
+    let res: Result<(), TestError> = contract.call_process(&msg).unwrap();
     assert!(res.is_ok());
-    assert_eq!(contract.consumed_points().unwrap(), 2871);
+    assert_eq!(contract.consumed_points().unwrap(), 2881); // TODO: This is not accurate. by changing the wasmer version it will change. We should get rid of it
 }
 
 #[test]
@@ -27,12 +27,12 @@ fn test_read_write_storage() {
 
     let msg = "hello world!".as_bytes();
     let _: Result<(), TestError> = contract
-        .call_process_msg(&ProcMsg::WriteData {
+        .call_process(&ProcMsg::WriteData {
             offset: 0,
             data: msg.to_vec(),
         })
         .unwrap();
-    assert_eq!(contract.consumed_points().unwrap(), 6596);
+    assert_eq!(contract.consumed_points().unwrap(), 6431);
 
     let res: Result<QueryRsp, TestError> = contract
         .call_query(&QueryMsg::ReadData {
@@ -41,7 +41,7 @@ fn test_read_write_storage() {
         })
         .unwrap();
     assert_eq!(res.unwrap(), QueryRsp::Buffer("world".as_bytes().to_vec()),);
-    assert_eq!(contract.consumed_points().unwrap(), 10859);
+    assert_eq!(contract.consumed_points().unwrap(), 11507);
     assert!(!contract.exhausted().unwrap());
 }
 
@@ -61,6 +61,6 @@ fn test_hash_blake2b() {
             hex!("12b38977f2d67f06f0c0cd54aaf7324cf4fee184398ea33d295e8d1543c2ee1a").to_vec()
         ),
     );
-    assert_eq!(contract.consumed_points().unwrap(), 32364);
+    assert_eq!(contract.consumed_points().unwrap(), 22442);
     assert!(!contract.exhausted().unwrap());
 }
