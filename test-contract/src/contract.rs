@@ -1,26 +1,27 @@
-use crate::message::{InstantiateMsg, ProcMsg, QueryMsg, QueryRsp, TestError};
+use crate::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};
 use blake2::digest::{Update, VariableOutput};
 use blake2::VarBlake2b;
 use kelk::context::Context;
-use kelk::kelk_derive;
+use kelk::kelk_entry;
+use kelk::storage::str::StorageString;
 
-fn null(_ctx: Context) -> Result<(), TestError> {
+fn null(_ctx: Context) -> Result<(), Error> {
     Ok(())
 }
 
-fn write_buffer(ctx: Context, offset: u32, data: &[u8]) -> Result<(), TestError> {
-    ctx.storage
-        .write(offset, data)
-        .map_err(|_| TestError::KelkError)
+fn set_message(ctx: Context, msg: &str) -> Result<(), Error> {
+    let offset = ctx.storage.read_stack_at(1)?;
+    let mut storage_string = StorageString::load(ctx.storage, offset)?;
+    Ok(storage_string.set_string(msg)?)
 }
 
-fn read_buffer(ctx: Context, offset: u32, length: u32) -> Result<Vec<u8>, TestError> {
-    ctx.storage
-        .read(offset, length)
-        .map_err(|_| TestError::KelkError)
+fn get_message(ctx: Context) -> Result<String, Error> {
+    let offset = ctx.storage.read_stack_at(1)?;
+    let storage_string = StorageString::load(ctx.storage, offset)?;
+    Ok(storage_string.get_string()?)
 }
 
-fn get_hash(_ctx: Context, data: Vec<u8>) -> Result<Vec<u8>, TestError> {
+fn calc_hash(data: Vec<u8>) -> Result<Vec<u8>, Error> {
     let mut hasher = VarBlake2b::new(32).unwrap();
     hasher.update(data);
     let res = hasher.finalize_boxed().to_vec();
@@ -28,26 +29,36 @@ fn get_hash(_ctx: Context, data: Vec<u8>) -> Result<Vec<u8>, TestError> {
     Ok(res)
 }
 
+fn divide(a: i32, b: i32) -> Result<i32, Error> {
+    if b == 0 {
+        return Err(Error::DivByZero);
+    }
 
-#[kelk_derive(instantiate)]
-pub fn instantiate(_ctx: Context, _msg: InstantiateMsg) -> Result<(), TestError> {
+    Ok(a / b)
+}
+
+#[kelk_entry]
+pub fn instantiate(ctx: Context, _msg: InstantiateMsg) -> Result<(), Error> {
+    let storage_string = StorageString::create(ctx.storage, 32).unwrap();
+    ctx.storage
+        .fill_stack_at(1, storage_string.offset())
+        .unwrap();
     Ok(())
 }
 
-#[kelk_derive(process)]
-pub fn process(ctx: Context, msg: ProcMsg) -> Result<(), TestError> {
-    match msg {
+#[kelk_entry]
+pub fn process(ctx: Context, msg: ProcMsg) -> Result<(), Error> {
+    match &msg {
         ProcMsg::Null => null(ctx),
-        ProcMsg::WriteData { offset, data } => write_buffer(ctx, offset, &data),
+        ProcMsg::SetMessage { msg } => set_message(ctx, msg),
     }
 }
 
-#[kelk_derive(query)]
-pub fn query(ctx: Context, msg: QueryMsg) -> Result<QueryRsp, TestError> {
+#[kelk_entry]
+pub fn query(ctx: Context, msg: QueryMsg) -> Result<QueryRsp, Error> {
     match msg {
-        QueryMsg::ReadData { offset, length } => {
-            Ok(QueryRsp::Buffer(read_buffer(ctx, offset, length)?))
-        }
-        QueryMsg::Hash { data } => Ok(QueryRsp::Buffer(get_hash(ctx, data)?)),
+        QueryMsg::GetMessage => Ok(QueryRsp::String(get_message(ctx)?)),
+        QueryMsg::Hasher { data } => Ok(QueryRsp::Data(calc_hash(data)?)),
+        QueryMsg::Divider { a, b } => Ok(QueryRsp::Int32(divide(a, b)?)),
     }
 }
