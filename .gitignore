@@ -1,5 +1,5 @@
 target
-cargo.lock
+Cargo.lock
 **/*.rs.bk
 .vscode
 .todo

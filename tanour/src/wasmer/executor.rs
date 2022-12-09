@@ -60,7 +60,7 @@ impl WasmerExecutor {
             Function::new_native_with_env(store, env.clone(), native_get_param),
         );
 
-        import_obj.register("zarb", env_imports);
+        import_obj.register("pactus", env_imports);
 
         let _instance = Box::new(wasmer::Instance::new(&module, &import_obj).map_err(
             |original| Error::InstantiationError {

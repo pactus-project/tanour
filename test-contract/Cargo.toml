@@ -1,7 +1,7 @@
 [package]
 name = "test_contract"
-version = "0.2.0"
-authors = ["Zarb development team <admin@zarb.network>"]
+version = "0.1.0"
+authors = ["Pactus blockchain <admin@pactus.org>"]
 edition = "2021"
 
 [dependencies]
