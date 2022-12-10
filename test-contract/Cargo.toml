@@ -5,7 +5,7 @@ authors = ["Pactus blockchain <admin@pactus.org>"]
 edition = "2021"
 
 [dependencies]
-kelk = { path = "../../kelk/crates/kelk", version = "0.3.0" }
+kelk = { version = "0.3.0" }
 minicbor = { version = "0.18", features = ["derive"] }
 blake2 = "0.9"
 
