@@ -30,15 +30,15 @@ where
     }
 
     fn read_page(&mut self, page_no: usize) -> Result<&mut Page> {
-        println!("fn: read_page, page_no: {}", page_no);
+        println!("fn: read_page, page_no: {page_no}");
         let offset = page_no * self.page_size;
 
         let page = match self.pages.entry(page_no) {
             Entry::Occupied(o) => o.into_mut(),
             Entry::Vacant(v) => {
                 println!(
-                    "Try to read the storage. offset: {}, page_size: {}",
-                    offset, self.page_size
+                    "Try to read the storage. offset: {offset}, page_size: {}",
+                    self.page_size
                 );
                 let bytes = self.provider.read_storage(offset, self.page_size)?;
                 let page = Page::new(offset, self.page_size, bytes);
@@ -55,7 +55,7 @@ where
     P: ProviderAPI,
 {
     fn read_storage(&mut self, offset: usize, length: usize) -> Result<Vec<u8>> {
-        println!("fn: read_storage, offset: {}, length: {}", offset, length);
+        println!("fn: read_storage, offset: {offset}, length: {length}");
         let first_page = offset / self.page_size;
         let last_page = (offset + length) / self.page_size;
         let mut data = Vec::new();

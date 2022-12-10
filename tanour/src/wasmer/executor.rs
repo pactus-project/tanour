@@ -64,7 +64,7 @@ impl WasmerExecutor {
 
         let _instance = Box::new(wasmer::Instance::new(&module, &import_obj).map_err(
             |original| Error::InstantiationError {
-                msg: format!("{:?}", original),
+                msg: format!("{original}"),
             },
         )?);
 
@@ -90,7 +90,7 @@ impl executor::Executor for WasmerExecutor {
 
         match result.first() {
             Some(val) => Err(Error::RuntimeError {
-                msg: format!("Invalid return value for {}: {:?}", name, val),
+                msg: format!("Invalid return value for {name}: {val:?}"),
             }),
             None => Ok(()),
         }
@@ -104,11 +104,11 @@ impl executor::Executor for WasmerExecutor {
             Some(val) => match val {
                 Val::I64(i64) => Ok(*i64 as u64),
                 _ => Err(Error::RuntimeError {
-                    msg: format!("Invalid return value for {}", name),
+                    msg: format!("Invalid return value for {name}"),
                 }),
             },
             None => Err(Error::RuntimeError {
-                msg: format!("No return value for {}", name),
+                msg: format!("No return value for {name}"),
             }),
         }
     }
@@ -121,11 +121,11 @@ impl executor::Executor for WasmerExecutor {
             Some(val) => match val {
                 Val::I64(i64) => Ok(*i64 as u64),
                 _ => Err(Error::RuntimeError {
-                    msg: format!("Invalid return value for {}", name),
+                    msg: format!("Invalid return value for {name}"),
                 }),
             },
             None => Err(Error::RuntimeError {
-                msg: format!("No return value for {}", name),
+                msg: format!("No return value for {name}"),
             }),
         }
     }

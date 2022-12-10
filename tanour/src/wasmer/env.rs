@@ -98,11 +98,11 @@ impl Env {
                     .exports
                     .get_function(name)
                     .map_err(|original| Error::RuntimeError {
-                        msg: format!("{}", original),
+                        msg: format!("{original}"),
                     })?;
 
             func.call(vals).map_err(|original| Error::RuntimeError {
-                msg: format!("{}", original),
+                msg: format!("{original}"),
             })
         })
     }

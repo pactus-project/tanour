@@ -46,7 +46,7 @@ where
         fname: &str,
     ) -> Result<D> {
         let param_data = minicbor::to_vec(msg).map_err(|original| Error::SerializationError {
-            msg: format!("{}", original),
+            msg: format!("{original}"),
         })?;
         let size = param_data.len() as u32;
         let ptr_64 = self.allocate(size)?;
@@ -60,7 +60,7 @@ where
         let res_ptr = Pointer::from_u64(res_ptr_64);
         self.buffer = self.executor.read_ptr(&res_ptr)?;
         minicbor::decode(&self.buffer).map_err(|original| Error::SerializationError {
-            msg: format!("{}", original),
+            msg: format!("{original}"),
         })
     }
 

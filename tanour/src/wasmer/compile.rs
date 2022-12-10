@@ -27,7 +27,7 @@ pub fn compile(code: &[u8], memory_limit: u64, metering_limit: u64) -> Result<Mo
     let store = Store::new_with_tunables(&engine, tunables);
 
     let module = Module::new(&store, code).map_err(|original| Error::CompileError {
-        msg: format!("{}", original),
+        msg: format!("{original}"),
     })?;
 
     Ok(module)

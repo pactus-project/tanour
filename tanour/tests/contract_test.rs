@@ -30,9 +30,7 @@ fn test_read_write_storage() {
     let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 
     let msg = "hello world!".to_string();
-    let _: Result<(), Error> = contract
-        .call_process(&ProcMsg::SetMessage { msg })
-        .unwrap();
+    let _: Result<(), Error> = contract.call_process(&ProcMsg::SetMessage { msg }).unwrap();
     assert_eq!(contract.consumed_points().unwrap(), 12359);
 
     let res: Result<QueryRsp, Error> = contract.call_query(&QueryMsg::GetMessage).unwrap();
@@ -52,7 +50,7 @@ fn test_hash_blake2b() {
     let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 
     let data = "zarb".as_bytes().to_vec();
-   let res: Result<QueryRsp, Error> = contract.call_query(&QueryMsg::Hasher { data }).unwrap();
+    let res: Result<QueryRsp, Error> = contract.call_query(&QueryMsg::Hasher { data }).unwrap();
     assert_eq!(
         res.unwrap(),
         QueryRsp::Data(
