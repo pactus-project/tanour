@@ -21,3 +21,7 @@ pub fn native_read_storage(env: &Env, offset: u32, ptr: u32, len: u32) -> Result
     memory::write_ptr(&mem, ptr, &data)?;
     Ok(0)
 }
+
+pub fn native_get_param(_env: &Env, _offset: u32, _ptr: u32, _len: u32) -> Result<u32> {
+    todo!()
+}

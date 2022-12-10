@@ -1,25 +1,27 @@
-use crate::message::{InstantiateMsg, ProcMsg, QueryMsg, QueryRsp, TestError};
+use crate::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};
 use blake2::digest::{Update, VariableOutput};
 use blake2::VarBlake2b;
-use kelk_env::context::Context;
+use kelk::context::Context;
+use kelk::kelk_entry;
+use kelk::storage::str::StorageString;
 
-fn null(_ctx: Context) -> Result<(), TestError> {
+fn null(_ctx: Context) -> Result<(), Error> {
     Ok(())
 }
 
-fn write_buffer(ctx: Context, offset: u32, data: &[u8]) -> Result<(), TestError> {
-    ctx.api
-        .swrite(offset, data)
-        .map_err(|_| TestError::KelkError)
+fn set_message(ctx: Context, msg: &str) -> Result<(), Error> {
+    let offset = ctx.storage.read_stack_at(1)?;
+    let mut storage_string = StorageString::load(ctx.storage, offset)?;
+    Ok(storage_string.set_string(msg)?)
 }
 
-fn read_buffer(ctx: Context, offset: u32, length: u32) -> Result<Vec<u8>, TestError> {
-    ctx.api
-        .sread(offset, length)
-        .map_err(|_| TestError::KelkError)
+fn get_message(ctx: Context) -> Result<String, Error> {
+    let offset = ctx.storage.read_stack_at(1)?;
+    let storage_string = StorageString::load(ctx.storage, offset)?;
+    Ok(storage_string.get_string()?)
 }
 
-fn get_hash(_ctx: Context, data: Vec<u8>) -> Result<Vec<u8>, TestError> {
+fn calc_hash(data: Vec<u8>) -> Result<Vec<u8>, Error> {
     let mut hasher = VarBlake2b::new(32).unwrap();
     hasher.update(data);
     let res = hasher.finalize_boxed().to_vec();
@@ -27,48 +29,36 @@ fn get_hash(_ctx: Context, data: Vec<u8>) -> Result<Vec<u8>, TestError> {
     Ok(res)
 }
 
-/// The "instantiate" will be executed only once on instantiating the contract actor
-#[cfg(target_arch = "wasm32")]
-mod __wasm_export_instantiate {
-    #[no_mangle]
-    extern "C" fn instantiate(msg_ptr: u64) -> u64 {
-        kelk_env::do_instantiate(&super::instantiate, msg_ptr)
+fn divide(a: i32, b: i32) -> Result<i32, Error> {
+    if b == 0 {
+        return Err(Error::DivByZero);
     }
+
+    Ok(a / b)
 }
 
-#[cfg(target_arch = "wasm32")]
-mod __wasm_export_process_msg {
-    #[no_mangle]
-    extern "C" fn process_msg(msg_ptr: u64) -> u64 {
-        kelk_env::do_process_msg(&super::process_msg, msg_ptr)
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-mod __wasm_export_query {
-    #[no_mangle]
-    extern "C" fn query(msg_ptr: u64) -> u64 {
-        kelk_env::do_query(&super::query, msg_ptr)
-    }
-}
-
-// #[kelk_derive(instantiate)]
-pub fn instantiate(_ctx: Context, _msg: InstantiateMsg) -> Result<(), TestError> {
+#[kelk_entry]
+pub fn instantiate(ctx: Context, _msg: InstantiateMsg) -> Result<(), Error> {
+    let storage_string = StorageString::create(ctx.storage, 32).unwrap();
+    ctx.storage
+        .fill_stack_at(1, storage_string.offset())
+        .unwrap();
     Ok(())
 }
 
-pub fn process_msg(ctx: Context, msg: ProcMsg) -> Result<(), TestError> {
-    match msg {
+#[kelk_entry]
+pub fn process(ctx: Context, msg: ProcMsg) -> Result<(), Error> {
+    match &msg {
         ProcMsg::Null => null(ctx),
-        ProcMsg::WriteData { offset, data } => write_buffer(ctx, offset, &data),
+        ProcMsg::SetMessage { msg } => set_message(ctx, msg),
     }
 }
 
-pub fn query(ctx: Context, msg: QueryMsg) -> Result<QueryRsp, TestError> {
+#[kelk_entry]
+pub fn query(ctx: Context, msg: QueryMsg) -> Result<QueryRsp, Error> {
     match msg {
-        QueryMsg::ReadData { offset, length } => {
-            Ok(QueryRsp::Buffer(read_buffer(ctx, offset, length)?))
-        }
-        QueryMsg::Hash { data } => Ok(QueryRsp::Buffer(get_hash(ctx, data)?)),
+        QueryMsg::GetMessage => Ok(QueryRsp::String(get_message(ctx)?)),
+        QueryMsg::Hasher { data } => Ok(QueryRsp::Data(calc_hash(data)?)),
+        QueryMsg::Divider { a, b } => Ok(QueryRsp::Int32(divide(a, b)?)),
     }
 }

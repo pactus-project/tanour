@@ -8,40 +8,50 @@ pub enum ProcMsg {
     #[n(0)]
     Null,
     #[n(1)]
-    WriteData {
+    SetMessage {
         #[n(0)]
-        offset: u32,
-        #[n(1)]
-        data: Vec<u8>,
+        msg: String,
     },
 }
 
 #[derive(Clone, Debug, Encode, Decode)]
 pub enum QueryMsg {
     #[n(0)]
-    ReadData {
-        #[n(0)]
-        offset: u32,
-        #[n(1)]
-        length: u32,
-    },
+    GetMessage,
     #[n(1)]
-    Hash {
+    Hasher {
         #[n(0)]
         data: Vec<u8>,
+    },
+    #[n(2)]
+    Divider {
+        #[n(0)]
+        a: i32,
+        #[n(1)]
+        b: i32,
     },
 }
 
 #[derive(Clone, Debug, Decode, Encode, Eq, PartialEq)]
 pub enum QueryRsp {
-    #[b(0)]
-    Buffer(#[n(0)] Vec<u8>),
+    #[n(0)]
+    String(#[n(0)] String),
+    #[n(1)]
+    Data(#[n(0)] Vec<u8>),
+    #[n(2)]
+    Int32(#[n(0)] i32),
 }
 
 #[derive(Clone, Debug, Decode, Encode)]
-pub enum TestError {
-    #[b(0)]
-    KelkError,
-    #[b(1)]
+pub enum Error {
+    #[n(0)]
+    StorageError,
+    #[n(1)]
     DivByZero,
+}
+
+impl From<kelk::storage::error::Error> for Error {
+    fn from(_error: kelk::storage::error::Error) -> Self {
+        Error::StorageError
+    }
 }

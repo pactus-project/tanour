@@ -1,9 +1,9 @@
 use hex_literal::hex;
 use tanour::{contract::Contract, provider_mock::ProviderMock};
-use test_contract::message::{ProcMsg, QueryMsg, QueryRsp, TestError};
+use test_contract::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};
 
 #[test]
-fn test_call_process_msg() {
+fn test_call_process() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
     let code = wat::parse_bytes(wat).unwrap().to_vec();
 
@@ -11,10 +11,12 @@ fn test_call_process_msg() {
     let provider = ProviderMock::new(1024 * 1024);
     let mut contract = Contract::new(provider, &code, 1000000, 100000).unwrap();
 
+    let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
+
     let msg = ProcMsg::Null;
-    let res: Result<(), TestError> = contract.call_process_msg(&msg).unwrap();
+    let res: Result<(), Error> = contract.call_process(&msg).unwrap();
     assert!(res.is_ok());
-    assert_eq!(contract.consumed_points().unwrap(), 2871);
+    assert_eq!(contract.consumed_points().unwrap(), 9522);
 }
 
 #[test]
@@ -25,23 +27,15 @@ fn test_read_write_storage() {
     let provider = ProviderMock::new(1024 * 1024);
     let mut contract = Contract::new(provider, &code, 1000000, 100000).unwrap();
 
-    let msg = "hello world!".as_bytes();
-    let _: Result<(), TestError> = contract
-        .call_process_msg(&ProcMsg::WriteData {
-            offset: 0,
-            data: msg.to_vec(),
-        })
-        .unwrap();
-    assert_eq!(contract.consumed_points().unwrap(), 6596);
+    let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 
-    let res: Result<QueryRsp, TestError> = contract
-        .call_query(&QueryMsg::ReadData {
-            offset: 6,
-            length: 5,
-        })
-        .unwrap();
-    assert_eq!(res.unwrap(), QueryRsp::Buffer("world".as_bytes().to_vec()),);
-    assert_eq!(contract.consumed_points().unwrap(), 10859);
+    let msg = "hello world!".to_string();
+    let _: Result<(), Error> = contract.call_process(&ProcMsg::SetMessage { msg }).unwrap();
+    assert_eq!(contract.consumed_points().unwrap(), 12359);
+
+    let res: Result<QueryRsp, Error> = contract.call_query(&QueryMsg::GetMessage).unwrap();
+    assert_eq!(res.unwrap(), QueryRsp::String("hello world!".to_string()),);
+    assert_eq!(contract.consumed_points().unwrap(), 18120);
     assert!(!contract.exhausted().unwrap());
 }
 
@@ -52,15 +46,17 @@ fn test_hash_blake2b() {
 
     let provider = ProviderMock::new(1024 * 1024);
     let mut contract = Contract::new(provider, &code, 1000000, 100000).unwrap();
-    let data = "zarb".as_bytes().to_vec();
-    let res: Result<QueryRsp, TestError> = contract.call_query(&QueryMsg::Hash { data }).unwrap();
 
+    let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
+
+    let data = "zarb".as_bytes().to_vec();
+    let res: Result<QueryRsp, Error> = contract.call_query(&QueryMsg::Hasher { data }).unwrap();
     assert_eq!(
         res.unwrap(),
-        QueryRsp::Buffer(
+        QueryRsp::Data(
             hex!("12b38977f2d67f06f0c0cd54aaf7324cf4fee184398ea33d295e8d1543c2ee1a").to_vec()
         ),
     );
-    assert_eq!(contract.consumed_points().unwrap(), 32364);
+    assert_eq!(contract.consumed_points().unwrap(), 28601);
     assert!(!contract.exhausted().unwrap());
 }

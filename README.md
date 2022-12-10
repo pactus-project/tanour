@@ -1,30 +1,30 @@
 # Tanour
 
-Tanour is a Contract actor executor for [Zarb](https://zarb.network/) blockchain.
+Tanour is a Contract actor executor for [Pactus](https://pactus.org/) blockchain.
 
 ## Features
 
 ### Standalone and stateless
 
 Tanour can be launched as an independent and standalone process and it has no internal state.
-Interacting with the Zarb blockchain happens through the set of Provider APIs.
+Interacting with the Pactus blockchain happens through the set of Provider APIs.
 
 ![tanour-stateless](https://user-images.githubusercontent.com/8073510/133919171-0f5aea21-3f71-4b4b-99cd-465818b467d8.png)
 
 ### Actor model
 
-Contract in Zarb are like Actors in the [Actor model](https://en.wikipedia.org/wiki/Actor_model).
+Contract in Pactus are like Actors in the [Actor model](https://en.wikipedia.org/wiki/Actor_model).
 
 Each contract actor:
  - Can be instantiated through the `instantiate` method.
- - Can process the message it receives through `process_msg` method.
+ - Can process the message it receives through `process` method.
  - Can concurrently send a message to another contract actor through the `send_msg` method.
 
 These are the only methods that each contract can expose to the outside world.
 
 ### Storage as file
 
-Storage in Zarb is not a set of key-value pairs, indeed it's a separate file that each contract actor has the read and write access to modify it. This model comes with many advantages. However, there are some disadvantages like difficulty of writing the smart contract and lack supported map data type.
+Pactus storage is not a typical key-value pair system, but rather a separate file that each contract actor has read and write access to. Pactus storage offers a unique way of managing data in a distributed environment.
 
 **Storage as key-value pairs**
 
@@ -53,7 +53,7 @@ In order to use Tanour as a webservice you also need to install [Cap'n Proto](ht
 To build the Tanour from the source code, you can follow these commands:
 
 ```
-$ git clone https://github.com/zarb/tanour
+$ git clone https://github.com/pactus-project/tanour
 $ cd tanour
 
 # build in release mode
