@@ -153,7 +153,7 @@ pub(crate) mod tests {
         let res = env.call_function("allocate", &[]);
         match res.unwrap_err() {
             Error::InstantiationError { msg } => assert!(msg.contains("Wasmer instance")),
-            err => panic!("Unexpected error: {:?}", err),
+            err => panic!("Unexpected error: {err}"),
         }
     }
 

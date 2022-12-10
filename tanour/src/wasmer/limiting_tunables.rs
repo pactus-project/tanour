@@ -197,7 +197,7 @@ mod tests {
         assert_eq!(memories.len(), 1);
 
         let first_memory = memories.pop().unwrap();
-        println!("Memory of this instance: {:?}", first_memory);
+        println!("Memory of this instance: {first_memory:?}");
         assert_eq!(first_memory.ty().maximum.unwrap(), Pages(24));
 
         Ok(())

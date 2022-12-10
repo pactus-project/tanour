@@ -16,7 +16,7 @@ fn test_call_process() {
     let msg = ProcMsg::Null;
     let res: Result<(), Error> = contract.call_process(&msg).unwrap();
     assert!(res.is_ok());
-    assert_eq!(contract.consumed_points().unwrap(), 9522); // TODO: This is not accurate. by changing the wasmer version it will change. We should get rid of it
+    assert_eq!(contract.consumed_points().unwrap(), 9522);
 }
 
 #[test]
