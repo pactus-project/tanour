@@ -28,10 +28,15 @@ impl<P> Contract<P>
 where
     P: ProviderAPI,
 {
-    pub fn new(provider: P, code: &[u8], memory_limit: u64, metering_limit: u64) -> Result<Self> {
+    pub fn new(
+        provider: P,
+        code: &[u8],
+        memory_limit_page: u32,
+        metering_limit: u64,
+    ) -> Result<Self> {
         let state = Arc::new(Mutex::new(State::new(provider, PAGE_SIZE)));
         let executor =
-            wasmer::WasmerExecutor::new(code, memory_limit, metering_limit, state.clone())?;
+            wasmer::WasmerExecutor::new(code, memory_limit_page, metering_limit, state.clone())?;
 
         Ok(Contract {
             executor: Box::new(executor),

@@ -1,8 +1,8 @@
 use crate::tanour_capnp;
 use log::debug;
 use primitive_types::{H256, U256};
-use tanour::address::Address;
-use tanour::provider::{Provider, StateAccount};
+use tanour::provider_api::ProviderAPI;
+use tanour::Address;
 struct Error {
     pub failed: String,
 }
@@ -30,7 +30,7 @@ impl ProviderAdaptor {
     }
 }
 
-impl Provider for ProviderAdaptor {
+impl ProviderAPI for ProviderAdaptor {
     fn exist(&self, address: &Address) -> bool {
         let mut request = self.client.exist_request();
         {

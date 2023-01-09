@@ -5,7 +5,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 #[cfg_attr(test, automock)]
-pub trait StateTrait: Send + Sync {
+pub trait StateTrait: Send {
     fn read_storage(&mut self, offset: usize, len: usize) -> Result<Vec<u8>>;
     fn write_storage(&mut self, offset: usize, data: &[u8]) -> Result<()>;
 }
