@@ -21,6 +21,7 @@ struct Transaction {
     }
   }
   args @7: Data;
+  filename @8: Text;
 }
 
 struct LogEntry {
@@ -41,14 +42,6 @@ interface Executor {
 }
 
 interface Provider {
-  exists @0         ( address: Data                                     ) -> (exist: Bool);
-  account @1        ( address: Data                                     ) -> (account: Account);
-  updateAccount @2  ( address: Data, balance: UInt64, sequence: UInt64  ) -> ();
-  createContract @3 ( address: Data, code: Data                         ) -> ();
-  getStorage @4     ( address: Data, key: Data                          ) -> (storage: Data);
-  setStorage @5     ( address: Data, key: Data, value: Data             ) -> ();
-  timestamp @6      (                                                   ) -> (timestamp: UInt64);
-  blockNumber @7    (                                                   ) -> (number: UInt64);
-  blockHash @8      ( blockNo: UInt64                                   ) -> (hash: Data);
-  gasLimit @9       (                                                   ) -> (gasLimit: UInt64);
+  readStorage @0    ( filename: Text, offset: UInt32, length: UInt32     ) -> (value: Data);
+  writeStorage @1   ( filename: Text, offset: UInt32, value: Data        ) -> ();
 }

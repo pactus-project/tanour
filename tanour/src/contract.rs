@@ -8,7 +8,7 @@ use minicbor::{Decode, Encode};
 
 use std::sync::{Arc, Mutex};
 
-const PAGE_SIZE: u32 = 1024 * 1024; // 1 MB
+const PAGE_SIZE: u32 = 1024 * 1024; // 1 kilobyte
 
 #[derive(Debug)]
 pub struct ResultData {

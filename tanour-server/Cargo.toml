@@ -1,6 +1,6 @@
 [package]
 name = "tanour-server"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Pactus blockchain <admin@pactus.org>"]
 edition = "2021"
 
@@ -19,8 +19,7 @@ capnp-rpc = { git = "https://github.com/capnproto/capnproto-rust" }
 futures = "0.3.0"
 tokio = { version = "0.2.0", features = ["time", "sync", "rt-util", "rt-core", "net", "macros"]}
 tokio-util = { version = "0.3.0", features = ["compat"] }
-tanour = { path = "../tanour" }
-primitive-types = "0.7.2"
+tanour = { version = "0.2.0", path = "../tanour" }
 async-std = "1.5.0"
 log = "0.4"
 simple_logger = "1.4.0"

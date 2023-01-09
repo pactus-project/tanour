@@ -1,8 +1,9 @@
+use std::sync::Arc;
 use crate::tanour_capnp;
+use async_std::sync::Mutex;
 use log::debug;
-use primitive_types::{H256, U256};
 use tanour::provider_api::ProviderAPI;
-use tanour::Address;
+
 struct Error {
     pub failed: String,
 }
@@ -16,170 +17,212 @@ impl From<::capnp::Error> for Error {
 }
 impl From<Error> for tanour::error::Error {
     fn from(error: Error) -> Self {
-        tanour::error::Error::Other { msg: error.failed }
+        tanour::error::Error::NetworkError { msg: error.failed }
     }
 }
 
 pub struct ProviderAdaptor {
     client: tanour_capnp::provider::Client,
+    filename: String,
 }
 
 impl ProviderAdaptor {
-    pub fn new(client: tanour_capnp::provider::Client) -> Self {
-        ProviderAdaptor { client }
+    pub fn new(client: tanour_capnp::provider::Client, filename: String) -> Self {
+        ProviderAdaptor { client, filename }
     }
 }
 
 impl ProviderAPI for ProviderAdaptor {
-    fn exist(&self, address: &Address) -> bool {
-        let mut request = self.client.exist_request();
-        {
-            request.get().set_address(address.as_bytes());
-        }
+    fn read_storage(&self, offset: u32, length: u32) -> tanour::error::Result<Vec<u8>> {
+        let req = self.client.read_storage_request();
+        req.get().set_filename(&self.filename);
+        req.get().set_offset(offset);
+        req.get().set_length(length);
 
         let handle = async move {
-            debug!("Try ot call `exist` method in client");
-            let result = request.send().promise.await?;
-            let exist = result.get()?.get_exist();
+            debug!("Try ot call `read_storage` method in client");
+            let result = req.send().promise.await?;
+            let res = result.get()?.get_value()?;
 
-            Ok(exist)
+            res
         };
-        let ret: Result<bool, ::capnp::Error> = futures::executor::block_on(handle);
-        match ret {
-            Ok(exist) => exist,
-            Err(_) => false,
-        }
+
+        //futures::executor::block_on(handle).map_err(|e: Error| e.into())
+        futures::executor::block_on(handle)
+        todo!()
     }
 
-    fn account(&self, address: &Address) -> Result<StateAccount, tanour::error::Error> {
-        let mut request = self.client.account_request();
-        {
-            request.get().set_address(address.as_bytes());
-        }
+    fn write_storage(&mut self, offset: u32, data: &[u8]) -> tanour::error::Result<()> {
+        let req = self.client.write_storage_request();
+        req.get().set_filename(&self.filename);
+        req.get().set_offset(offset);
+        req.get().set_value(data);
+
         let handle = async move {
-            debug!("Try ot call `account` method in client");
-            let result = request.send().promise.await?;
-            let account = result.get()?.get_account()?;
+            debug!("Try ot call `write_storage` method in client");
+            let result = req.send().promise.await?;
+            let res = result.get()?;
 
-            Ok(StateAccount {
-                nonce: U256::from_little_endian(account.get_nonce()?),
-                balance: U256::from_little_endian(account.get_balance()?),
-                code: account.get_code()?.to_vec(),
-            })
+            res
         };
 
-        futures::executor::block_on(handle).map_err(|e: Error| e.into())
+        //futures::executor::block_on(handle).map_err(|e: Error| e.into())
+        todo!()
     }
 
-    fn create_contract(
-        &mut self,
-        address: &Address,
-        code: &Vec<u8>,
-    ) -> Result<(), tanour::error::Error> {
-        let mut request = self.client.create_contract_request();
-        {
-            request.get().set_address(address.as_bytes());
-            request.get().set_code(code);
-        }
-        let handle = async move {
-            debug!("Try ot call `create_contract` method in client");
-            request.send().promise.await?;
-
-            Ok(())
-        };
-
-        futures::executor::block_on(handle).map_err(|e: Error| e.into())
+    fn query(&self, query: &[u8]) -> tanour::error::Result<Vec<u8>> {
+        todo!()
     }
 
-    fn update_account(
-        &mut self,
-        address: &Address,
-        balance: &U256,
-        nonce: &U256,
-    ) -> Result<(), tanour::error::Error> {
-        let mut request = self.client.update_account_request();
-        {
-            let mut tmp = Vec::new();
-            tmp.resize(32, 0);
+    // fn exist(&self, address: &Address) -> bool {
+    //     let mut request = self.client.exist_request();
+    //     {
+    //         request.get().set_address(address.as_bytes());
+    //     }
 
-            request.get().set_address(address.as_bytes());
+    //     let handle = async move {
+    //         debug!("Try ot call `exist` method in client");
+    //         let result = request.send().promise.await?;
+    //         let exist = result.get()?.get_exist();
 
-            balance.to_little_endian(&mut tmp);
-            request.get().set_balance(&tmp);
+    //         Ok(exist)
+    //     };
+    //     let ret: Result<bool, ::capnp::Error> = futures::executor::block_on(handle);
+    //     match ret {
+    //         Ok(exist) => exist,
+    //         Err(_) => false,
+    //     }
+    // }
 
-            nonce.to_little_endian(&mut tmp);
-            request.get().set_nonce(&tmp);
-        }
-        let handle = async move {
-            debug!("Try ot call `update_account` method in client");
-            request.send().promise.await?;
+    // fn account(&self, address: &Address) -> Result<StateAccount, tanour::error::Error> {
+    //     let mut request = self.client.account_request();
+    //     {
+    //         request.get().set_address(address.as_bytes());
+    //     }
+    //     let handle = async move {
+    //         debug!("Try ot call `account` method in client");
+    //         let result = request.send().promise.await?;
+    //         let account = result.get()?.get_account()?;
 
-            Ok(())
-        };
+    //         Ok(StateAccount {
+    //             nonce: U256::from_little_endian(account.get_nonce()?),
+    //             balance: U256::from_little_endian(account.get_balance()?),
+    //             code: account.get_code()?.to_vec(),
+    //         })
+    //     };
 
-        futures::executor::block_on(handle).map_err(|e: Error| e.into())
-    }
+    //     futures::executor::block_on(handle).map_err(|e: Error| e.into())
+    // }
 
-    fn storage_at(&self, address: &Address, key: &H256) -> Result<H256, tanour::error::Error> {
-        let mut request = self.client.storage_at_request();
-        {
-            request.get().set_address(address.as_bytes());
-            request.get().set_key(key.as_bytes());
-        }
-        let handle = async move {
-            debug!("Try ot call `storage_at` method in client");
-            let result = request.send().promise.await?;
-            let storage = result.get()?.get_storage()?;
+    // fn create_contract(
+    //     &mut self,
+    //     address: &Address,
+    //     code: &Vec<u8>,
+    // ) -> Result<(), tanour::error::Error> {
+    //     let mut request = self.client.create_contract_request();
+    //     {
+    //         request.get().set_address(address.as_bytes());
+    //         request.get().set_code(code);
+    //     }
+    //     let handle = async move {
+    //         debug!("Try ot call `create_contract` method in client");
+    //         request.send().promise.await?;
 
-            Ok(H256::from_slice(storage))
-        };
+    //         Ok(())
+    //     };
 
-        futures::executor::block_on(handle).map_err(|e: Error| e.into())
-    }
+    //     futures::executor::block_on(handle).map_err(|e: Error| e.into())
+    // }
 
-    fn set_storage(
-        &mut self,
-        address: &Address,
-        key: &H256,
-        value: &H256,
-    ) -> Result<(), tanour::error::Error> {
-        let mut request = self.client.set_storage_request();
-        {
-            request.get().set_address(address.as_bytes());
-            request.get().set_key(key.as_bytes());
-            request.get().set_value(value.as_bytes());
-        }
-        let handle = async move {
-            debug!("Try ot call `set_storage` method in client");
-            request.send().promise.await?;
+    // fn update_account(
+    //     &mut self,
+    //     address: &Address,
+    //     balance: &U256,
+    //     nonce: &U256,
+    // ) -> Result<(), tanour::error::Error> {
+    //     let mut request = self.client.update_account_request();
+    //     {
+    //         let mut tmp = Vec::new();
+    //         tmp.resize(32, 0);
 
-            Ok(())
-        };
+    //         request.get().set_address(address.as_bytes());
 
-        futures::executor::block_on(handle).map_err(|e: Error| e.into())
-    }
+    //         balance.to_little_endian(&mut tmp);
+    //         request.get().set_balance(&tmp);
 
-    fn block_hash(&self, _num: u64) -> Result<H256, tanour::error::Error> {
-        Ok(H256::zero())
-    }
+    //         nonce.to_little_endian(&mut tmp);
+    //         request.get().set_nonce(&tmp);
+    //     }
+    //     let handle = async move {
+    //         debug!("Try ot call `update_account` method in client");
+    //         request.send().promise.await?;
 
-    fn timestamp(&self) -> u64 {
-        0
-    }
+    //         Ok(())
+    //     };
 
-    fn block_number(&self) -> u64 {
-        0
-    }
+    //     futures::executor::block_on(handle).map_err(|e: Error| e.into())
+    // }
 
-    fn block_author(&self) -> Result<Address, tanour::error::Error> {
-        Err(tanour::error::Error::NotSupported)
-    }
+    // fn storage_at(&self, address: &Address, key: &H256) -> Result<H256, tanour::error::Error> {
+    //     let mut request = self.client.storage_at_request();
+    //     {
+    //         request.get().set_address(address.as_bytes());
+    //         request.get().set_key(key.as_bytes());
+    //     }
+    //     let handle = async move {
+    //         debug!("Try ot call `storage_at` method in client");
+    //         let result = request.send().promise.await?;
+    //         let storage = result.get()?.get_storage()?;
 
-    fn difficulty(&self) -> Result<U256, tanour::error::Error> {
-        Err(tanour::error::Error::NotSupported)
-    }
+    //         Ok(H256::from_slice(storage))
+    //     };
 
-    fn gas_limit(&self) -> Result<U256, tanour::error::Error> {
-        Ok(U256::zero())
-    }
+    //     futures::executor::block_on(handle).map_err(|e: Error| e.into())
+    // }
+
+    // fn set_storage(
+    //     &mut self,
+    //     address: &Address,
+    //     key: &H256,
+    //     value: &H256,
+    // ) -> Result<(), tanour::error::Error> {
+    //     let mut request = self.client.set_storage_request();
+    //     {
+    //         request.get().set_address(address.as_bytes());
+    //         request.get().set_key(key.as_bytes());
+    //         request.get().set_value(value.as_bytes());
+    //     }
+    //     let handle = async move {
+    //         debug!("Try ot call `set_storage` method in client");
+    //         request.send().promise.await?;
+
+    //         Ok(())
+    //     };
+
+    //     futures::executor::block_on(handle).map_err(|e: Error| e.into())
+    // }
+
+    // fn block_hash(&self, _num: u64) -> Result<H256, tanour::error::Error> {
+    //     Ok(H256::zero())
+    // }
+
+    // fn timestamp(&self) -> u64 {
+    //     0
+    // }
+
+    // fn block_number(&self) -> u64 {
+    //     0
+    // }
+
+    // fn block_author(&self) -> Result<Address, tanour::error::Error> {
+    //     Err(tanour::error::Error::NotSupported)
+    // }
+
+    // fn difficulty(&self) -> Result<U256, tanour::error::Error> {
+    //     Err(tanour::error::Error::NotSupported)
+    // }
+
+    // fn gas_limit(&self) -> Result<U256, tanour::error::Error> {
+    //     Ok(U256::zero())
+    // }
 }

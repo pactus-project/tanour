@@ -15,10 +15,10 @@ pub(super) fn native_write_storage(
         ptr,
         len,
     )?;
-    env.provider.lock().unwrap().write_storage(offset, &data)?;
+    env.state.lock().unwrap().write_storage(offset, &data)?;
     Ok(0)
 }
-
+git 
 pub(super) fn native_read_storage(
     func_env: FunctionEnvMut<Env>,
     offset: u32,
@@ -27,7 +27,7 @@ pub(super) fn native_read_storage(
 ) -> Result<u32> {
     let env = func_env.data();
 
-    let data = env.provider.lock().unwrap().read_storage(offset, len)?;
+    let data = env.state.lock().unwrap().read_storage(offset, len)?;
     memory::write_ptr(
         env.memory.as_ref().unwrap(),
         &func_env.as_store_ref(),
