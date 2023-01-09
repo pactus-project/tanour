@@ -1,15 +1,20 @@
-use super::limiting_tunables;
+use super::limiting_tunables::LimitingTunables;
 use crate::error::{Error, Result};
 use log::debug;
 use std::sync::Arc;
-use wasmer::wasmparser::Operator;
-use wasmer::{BaseTunables, Module, Store, Target, Universal};
-use wasmer::{CompilerConfig, Singlepass};
+use wasmer::{
+    wasmparser::Operator, BaseTunables, CompilerConfig, EngineBuilder, Module, Pages, Singlepass,
+    Store, Target,
+};
 use wasmer_middlewares::Metering;
 
 /// Compiles a given Wasm bytecode into a module.
 /// The given memory limit (in bytes) is used when memories are created.
-pub fn compile(code: &[u8], memory_limit: u64, metering_limit: u64) -> Result<Module> {
+pub fn compile(
+    code: &[u8],
+    memory_limit_page: u32,
+    metering_limit: u64,
+) -> Result<(Module, Store)> {
     debug!("compiling the code");
     let mut config = Singlepass::default();
 
@@ -17,18 +22,16 @@ pub fn compile(code: &[u8], memory_limit: u64, metering_limit: u64) -> Result<Mo
     let metering = Arc::new(Metering::new(metering_limit, cost_function));
     config.push_middleware(metering);
 
-    let engine = Universal::new(config).engine();
+    let engine = EngineBuilder::new(config);
 
     let base = BaseTunables::for_target(&Target::default());
-    let tunables = limiting_tunables::LimitingTunables::new(
-        base,
-        limiting_tunables::limit_to_pages(memory_limit as usize),
-    );
-    let store = Store::new_with_tunables(&engine, tunables);
+    let tunables = LimitingTunables::new(base, Pages(memory_limit_page));
+    let store = Store::new_with_tunables(engine, tunables);
+    //let store = Store::default();
 
     let module = Module::new(&store, code).map_err(|original| Error::CompileError {
         msg: format!("{original}"),
     })?;
 
-    Ok(module)
+    Ok((module, store))
 }

@@ -7,9 +7,8 @@ fn test_call_process() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
     let code = wat::parse_bytes(wat).unwrap().to_vec();
 
-    //TODO: define const for Mega and Kilo
     let provider = ProviderMock::new(1024 * 1024);
-    let mut contract = Contract::new(provider, &code, 1000000, 100000).unwrap();
+    let mut contract = Contract::new(provider, &code, 16, 100000).unwrap();
 
     let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 
@@ -25,7 +24,7 @@ fn test_read_write_storage() {
     let code = wat::parse_bytes(wat).unwrap().to_vec();
 
     let provider = ProviderMock::new(1024 * 1024);
-    let mut contract = Contract::new(provider, &code, 1000000, 100000).unwrap();
+    let mut contract = Contract::new(provider, &code, 16, 100000).unwrap();
 
     let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 
@@ -45,7 +44,7 @@ fn test_hash_blake2b() {
     let code = wat::parse_bytes(wat).unwrap().to_vec();
 
     let provider = ProviderMock::new(1024 * 1024);
-    let mut contract = Contract::new(provider, &code, 1000000, 100000).unwrap();
+    let mut contract = Contract::new(provider, &code, 16, 100000).unwrap();
 
     let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 

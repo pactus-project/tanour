@@ -6,7 +6,7 @@ use capnp::Error;
 use capnp_rpc::pry;
 use log::debug;
 use primitive_types::{H256, U256};
-use tanour::address::Address;
+use tanour::Address;
 use tokio::sync::oneshot;
 use tokio::sync::oneshot::error::TryRecvError;
 

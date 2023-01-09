@@ -1,7 +1,5 @@
-use loupe::MemoryUsage;
-use std::convert::TryInto;
 use std::ptr::NonNull;
-use std::sync::Arc;
+
 use wasmer::{
     vm::{self, MemoryError, MemoryStyle, TableStyle, VMMemoryDefinition, VMTableDefinition},
     MemoryType, Pages, TableType, Tunables,
@@ -11,7 +9,6 @@ use wasmer::{
 ///
 /// After adjusting the memory limits, it delegates all other logic
 /// to the base tunables.
-#[derive(MemoryUsage)]
 pub struct LimitingTunables<T: Tunables> {
     /// The maximum a linear memory is allowed to be (in Wasm pages, 64 KiB each).
     /// Since Wasmer ensures there is only none or one memory, this is practically
@@ -84,7 +81,7 @@ impl<T: Tunables> Tunables for LimitingTunables<T> {
         &self,
         ty: &MemoryType,
         style: &MemoryStyle,
-    ) -> Result<Arc<dyn vm::Memory>, MemoryError> {
+    ) -> Result<vm::VMMemory, MemoryError> {
         let adjusted = self.adjust_memory(ty);
         self.validate_memory(&adjusted)?;
         self.base.create_host_memory(&adjusted, style)
@@ -98,7 +95,7 @@ impl<T: Tunables> Tunables for LimitingTunables<T> {
         ty: &MemoryType,
         style: &MemoryStyle,
         vm_definition_location: NonNull<VMMemoryDefinition>,
-    ) -> Result<Arc<dyn vm::Memory>, MemoryError> {
+    ) -> Result<vm::VMMemory, MemoryError> {
         let adjusted = self.adjust_memory(ty);
         self.validate_memory(&adjusted)?;
         self.base
@@ -108,11 +105,7 @@ impl<T: Tunables> Tunables for LimitingTunables<T> {
     /// Create a table owned by the host given a [`TableType`] and a [`TableStyle`].
     ///
     /// Delegated to base.
-    fn create_host_table(
-        &self,
-        ty: &TableType,
-        style: &TableStyle,
-    ) -> Result<Arc<dyn vm::Table>, String> {
+    fn create_host_table(&self, ty: &TableType, style: &TableStyle) -> Result<vm::VMTable, String> {
         self.base.create_host_table(ty, style)
     }
 
@@ -124,37 +117,16 @@ impl<T: Tunables> Tunables for LimitingTunables<T> {
         ty: &TableType,
         style: &TableStyle,
         vm_definition_location: NonNull<VMTableDefinition>,
-    ) -> Result<Arc<dyn vm::Table>, String> {
+    ) -> Result<vm::VMTable, String> {
         self.base.create_vm_table(ty, style, vm_definition_location)
     }
-}
-
-pub fn limit_to_pages(limit: usize) -> Pages {
-    /// WebAssembly linear memory objects have sizes measured in pages. Each page
-    /// is 65536 (2^16) bytes. In WebAssembly version 1, a linear memory can have at
-    /// most 65536 pages, for a total of 2^32 bytes (4 gibibytes).
-    /// https://github.com/WebAssembly/memory64/blob/master/proposals/memory64/Overview.md
-    const MAX_WASM_MEMORY: usize = 4 * 1024 * 1024 * 1024;
-
-    /// WebAssembly page sizes are fixed to be 64KiB.
-    /// Note: large page support may be added in an opt-in manner in the [future].
-    ///
-    /// [future]: https://webassembly.org/docs/future-features/#large-page-support
-    pub const WASM_PAGE_SIZE: usize = 0x10000;
-
-    let capped = std::cmp::min(limit, MAX_WASM_MEMORY);
-    // round down to ensure the limit is less than or equal to the config
-    let pages: u32 = (capped / WASM_PAGE_SIZE)
-        .try_into()
-        .expect("Value must be <= 4 GiB/64KiB, i.e. fit in uint32. This is a bug.");
-    Pages(pages)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wasmer::Singlepass;
     use wasmer::{imports, wat2wasm, BaseTunables, Instance, Memory, Module, Pages, Store, Target};
-    use wasmer::{Singlepass, Universal};
 
     #[test]
     fn test_tunables_limit_memory() -> Result<(), Box<dyn std::error::Error>> {
@@ -168,7 +140,7 @@ mod tests {
 
         // Any compiler and any engine do the job here
         let compiler = Singlepass::default();
-        let engine = Universal::new(compiler).engine();
+        let _engine = Singlepass::new();
 
         // Here is where the fun begins
 
@@ -176,7 +148,7 @@ mod tests {
         let tunables = LimitingTunables::new(base, Pages(24));
 
         // Create a store, that holds the engine and our custom tunables
-        let store = Store::new_with_tunables(&engine, tunables);
+        let mut store = Store::new_with_tunables(compiler, tunables);
 
         println!("Compiling module...");
         let module = Module::new(&store, wasm_bytes)?;
@@ -185,7 +157,7 @@ mod tests {
         let import_object = imports! {};
 
         // Now at this point, our custom tunables are used
-        let instance = Instance::new(&module, &import_object)?;
+        let instance = Instance::new(&mut store, &module, &import_object)?;
 
         // Check what happened
         let mut memories: Vec<Memory> = instance
@@ -198,7 +170,7 @@ mod tests {
 
         let first_memory = memories.pop().unwrap();
         println!("Memory of this instance: {first_memory:?}");
-        assert_eq!(first_memory.ty().maximum.unwrap(), Pages(24));
+        assert_eq!(first_memory.ty(&store).maximum.unwrap(), Pages(24));
 
         Ok(())
     }
