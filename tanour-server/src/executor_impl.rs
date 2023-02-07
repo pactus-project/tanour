@@ -5,7 +5,8 @@ use capnp::capability::Promise;
 use capnp::Error;
 use capnp_rpc::pry;
 use log::debug;
-use tanour::Address;
+use tanour::contract::Contract;
+use tanour::{contract, Address};
 use tokio::sync::oneshot;
 use tokio::sync::oneshot::error::TryRecvError;
 
@@ -21,6 +22,7 @@ use tokio::sync::oneshot::error::TryRecvError;
 //         let action = match reader.get_action().which()? {
 //             tanour_capnp::transaction::action::Create(create) => {
 //                 let code = create.get_code()?.to_vec();
+
 //                 let salt = H256::from_slice(create.get_salt()?);
 //                 tanour::transaction::Action::Create(code, salt)
 //             }
@@ -58,21 +60,33 @@ impl executor::Server for ExecutorImpl {
         params: executor::ExecuteParams,
         mut results: executor::ExecuteResults,
     ) -> Promise<(), Error> {
-        todo!()
-        // let provider_client = pry!(pry!(params.get()).get_provider());
-        // let transaction = pry!(pry!(pry!(params.get()).get_transaction()).into());
-        // let (tx, mut rx) = oneshot::channel();
+        let provider_client = pry!(pry!(params.get()).get_provider());
+        let transaction = pry!(pry!(params.get()).get_transaction());
+        match pry!(transaction.get_action().which()) {
+            tanour_capnp::transaction::action::Instantiate(reader) => {}
+            tanour_capnp::transaction::action::Process(reader) => {
+                pry!(reader.get_address());
+
+                let mut adaptor = ProviderAdaptor::new(provider_client);
+
+                // let contract = Contract::new(provider, code, memory_limit_page, metering_limit)
+            }
+            tanour_capnp::transaction::action::Query(reader) => {}
+        };
+
+        //let (tx, mut rx) = oneshot::channel();
 
         // tokio::task::spawn(async move {
         //     debug!("provider: {:?}", std::thread::current().id());
         //     let mut adaptor = ProviderAdaptor::new(provider_client);
 
-        //     let result = tanour::execute::execute(&mut adaptor, &transaction).unwrap();
+        //    // let result = tanour::execute::execute(&mut adaptor, &transaction).unwrap();
 
-        //     tx.send(result).unwrap();
+        //    // tx.send(result).unwrap();
         // });
-        // debug!("executor: {:?}", std::thread::current().id());
+        debug!("executor: {:?}", std::thread::current().id());
 
+        todo!();
         // Promise::from_future(async move {
         //     loop {
         //         let msg = rx.try_recv();

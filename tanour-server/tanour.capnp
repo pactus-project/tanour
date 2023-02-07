@@ -12,29 +12,24 @@ struct Transaction {
   gas @2: UInt64;
   gasPrice @3: UInt64;
   action: union{
-    create: group {
+    instantiate: group {
       code @4: Data;
       salt @5: Data;
     }
-    call: group {
+    process: group {
       address @6: Data;
     }
+    query: group {
+      address @7: Data;
+    }
   }
-  args @7: Data;
-  filename @8: Text;
-}
-
-struct LogEntry {
-  address @0: Data;
-  topics @1: List(Data);
-  data @2: List(Int8);
+  args @8: Data;
 }
 
 struct ResultData {
   gasLeft @0: UInt64;
   data @1: Data;
   contract @2: Data;
-  logs @3: List(LogEntry);
 }
 
 interface Executor {
@@ -42,6 +37,6 @@ interface Executor {
 }
 
 interface Provider {
-  readStorage @0    ( filename: Text, offset: UInt32, length: UInt32     ) -> (value: Data);
-  writeStorage @1   ( filename: Text, offset: UInt32, value: Data        ) -> ();
+  exists @0         ( address: Data                                     ) -> (exist: Bool);
+  account @1        ( address: Data                                     ) -> (account: Account);
 }

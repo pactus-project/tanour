@@ -4,67 +4,52 @@ use async_std::sync::Mutex;
 use log::debug;
 use tanour::provider_api::ProviderAPI;
 
-struct Error {
-    pub failed: String,
-}
-
-impl From<::capnp::Error> for Error {
-    fn from(error: ::capnp::Error) -> Self {
-        Error {
-            failed: error.description,
-        }
-    }
-}
-impl From<Error> for tanour::error::Error {
-    fn from(error: Error) -> Self {
-        tanour::error::Error::NetworkError { msg: error.failed }
-    }
-}
-
 pub struct ProviderAdaptor {
     client: tanour_capnp::provider::Client,
-    filename: String,
 }
 
 impl ProviderAdaptor {
-    pub fn new(client: tanour_capnp::provider::Client, filename: String) -> Self {
-        ProviderAdaptor { client, filename }
+    pub fn new(client: tanour_capnp::provider::Client) -> Self {
+        ProviderAdaptor { client }
     }
 }
 
 impl ProviderAPI for ProviderAdaptor {
     fn read_storage(&self, offset: u32, length: u32) -> tanour::error::Result<Vec<u8>> {
-        let req = self.client.read_storage_request();
-        req.get().set_filename(&self.filename);
-        req.get().set_offset(offset);
-        req.get().set_length(length);
+        todo!();
+        // let req = self.client.read_storage_request();
+        // req.get().set_filename(&self.filename);
+        // req.get().set_offset(offset);
+        // req.get().set_length(length);
 
-        let handle = async move {
-            debug!("Try ot call `read_storage` method in client");
-            let result = req.send().promise.await?;
-            let res = result.get()?.get_value()?;
+        // let handle = async move {
+        //     debug!("Try ot call `read_storage` method in client");
 
-            res
-        };
+        //     // let result = req.send().promise.await?;
+        //     // let res = result.get()?.get_value()?;
+
+        //     // res
+        // };
 
         //futures::executor::block_on(handle).map_err(|e: Error| e.into())
-        futures::executor::block_on(handle)
+        //futures::executor::block_on(handle)
         todo!()
     }
 
     fn write_storage(&mut self, offset: u32, data: &[u8]) -> tanour::error::Result<()> {
-        let req = self.client.write_storage_request();
-        req.get().set_filename(&self.filename);
-        req.get().set_offset(offset);
-        req.get().set_value(data);
+        todo!();
+        // let req = self.client.write_storage_request();
+        // req.get().set_filename(&self.filename);
+        // req.get().set_offset(offset);
+        // req.get().set_value(data);
 
-        let handle = async move {
-            debug!("Try ot call `write_storage` method in client");
-            let result = req.send().promise.await?;
-            let res = result.get()?;
+        // let handle = async move {
+        //     debug!("Try ot call `write_storage` method in client");
+        //     //let result = req.send().promise.await?;
+        //     // let res = result.get()?;
 
-            res
-        };
+        //     // res
+        // };
 
         //futures::executor::block_on(handle).map_err(|e: Error| e.into())
         todo!()

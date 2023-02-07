@@ -12,10 +12,13 @@ path = "src/main.rs"
 
 [build-dependencies]
 capnpc = { git = "https://github.com/capnproto/capnproto-rust" }
+# capnpc = { path = "/home/mostafa/Projects/capnproto-rust/capnpc" }
 
 [dependencies]
 capnp =  { git = "https://github.com/capnproto/capnproto-rust" }
 capnp-rpc = { git = "https://github.com/capnproto/capnproto-rust" }
+# capnp = { path = "/home/mostafa/Projects/capnproto-rust/capnp" }
+# capnp-rpc = { path = "/home/mostafa/Projects/capnproto-rust/capnp-rpc" }
 futures = "0.3.0"
 tokio = { version = "0.2.0", features = ["time", "sync", "rt-util", "rt-core", "net", "macros"]}
 tokio-util = { version = "0.3.0", features = ["compat"] }
