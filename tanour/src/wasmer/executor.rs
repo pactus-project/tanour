@@ -1,10 +1,11 @@
 use super::compile;
 use super::memory;
 use super::native::*;
+
 use crate::error::{Error, Result};
 use crate::executor;
 use crate::memory::Pointer;
-use crate::state::StateTrait;
+use crate::provider::Provider;
 use std::sync::Arc;
 use std::sync::Mutex;
 use wasmer::AsStoreRef;
@@ -21,7 +22,7 @@ pub struct ResultData {
 
 #[derive(Clone)]
 pub(super) struct Env {
-    pub state: Arc<Mutex<dyn StateTrait>>,
+    pub provider: Arc<Mutex<Provider>>,
     pub memory: Option<Memory>,
 }
 
@@ -42,14 +43,14 @@ impl WasmerExecutor {
         code: &[u8],
         memory_limit_page: u32,
         metering_limit: u64,
-        state: Arc<Mutex<dyn StateTrait>>,
+        provider: Arc<Mutex<Provider>>,
     ) -> Result<Self> {
         let (module, store) = compile::compile(code, memory_limit_page, metering_limit)?;
         let store_lock = Arc::new(Mutex::new(store));
         let mut store_guard = store_lock.lock().unwrap();
 
         let env = Env {
-            state,
+            provider,
             memory: None,
         };
         let fun_env = FunctionEnv::new(&mut store_guard.as_store_mut(), env);
@@ -227,16 +228,17 @@ pub(crate) mod tests {
     use wasmer::Pages;
 
     use super::*;
-    use crate::state::MockStateTrait;
 
     pub(crate) fn make_test_wasmer(
-        wat: &str,
-        memory_limit_page: u32,
-        metering_limit: u64,
+        _wat: &str,
+        _memory_limit_page: u32,
+        _metering_limit: u64,
     ) -> Result<WasmerExecutor> {
-        let code = wat::parse_str(wat).unwrap();
-        let state = Arc::new(Mutex::new(MockStateTrait::new()));
-        WasmerExecutor::new(&code, memory_limit_page, metering_limit, state)
+        // let code = wat::parse_str(wat).unwrap();
+        // let state = Arc::new(Mutex::new(MockStateTrait::new()));
+        // WasmerExecutor::new(&code, memory_limit_page, metering_limit, state)
+
+        todo!()
     }
 
     #[test]

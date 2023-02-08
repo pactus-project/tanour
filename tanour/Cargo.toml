@@ -17,14 +17,15 @@ thiserror = "1.0"
 hex = "0.4.3"
 loupe = "0.1"
 minicbor = { version = "0.18", features = ["std"] }
+mockall = "0.10"
 
 [dev-dependencies]
 simple_logger = "1.4.0"
 wat = "1"
 test_contract = { path = "../test-contract" }
-mockall = "0.10"
 blake2 = "0.9"
 hex-literal = "0.3"
+tempfile = "3.3.0"
 
 [lib]
 path = "src/lib.rs"
