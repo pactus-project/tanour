@@ -10,8 +10,6 @@ use minicbor::{Decode, Encode};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-const PAGE_SIZE: usize = 1024 * 1024; // 1 kilobyte
-
 #[derive(Debug)]
 pub struct ResultData {
     pub gas_left: u64,
@@ -33,7 +31,7 @@ pub struct Contract {
     /// internal buffer for decoding messages
     buffer: Vec<u8>,
     /// Contract's address
-    address: Address,
+    _address: Address,
 }
 
 impl Contract {
@@ -59,7 +57,7 @@ impl Contract {
             executor: Box::new(executor),
             _state: state,
             buffer: Vec::new(),
-            address: *address,
+            _address: *address,
         })
     }
 

@@ -26,6 +26,8 @@ test_contract = { path = "../test-contract" }
 blake2 = "0.9"
 hex-literal = "0.3"
 tempfile = "3.3.0"
+quickcheck = "1"
+quickcheck_macros = "1"
 
 [lib]
 path = "src/lib.rs"

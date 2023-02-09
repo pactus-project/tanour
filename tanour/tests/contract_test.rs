@@ -1,6 +1,6 @@
 use hex_literal::hex;
 use tanour::{
-    blockchain_api::{MockBlockchainAPI},
+    blockchain_api::MockBlockchainAPI,
     contract::{Contract, Params},
 };
 use test_contract::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};

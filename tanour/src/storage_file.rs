@@ -17,6 +17,18 @@ pub struct StorageFile {
     pages: HashMap<u32, Page>,
 }
 
+// #[repr(C)]
+// struct Header {
+//     bom: u16,
+//     version: u8,
+//     owner: Address,
+//     created_at: u32,
+//     valid_until: u32,
+//     code_offset: u32,
+//     data_offset: u32,
+//     reserved: [u8; 68],
+// }
+
 impl StorageFile {
     pub fn create(file_path: &str, file_size_in_mb: u32) -> Result<Self> {
         let file_size = file_size_in_mb * PAGE_SIZE;
@@ -36,7 +48,7 @@ impl StorageFile {
     }
 
     pub fn read_storage(&mut self, offset: u32, length: u32) -> Result<Vec<u8>> {
-        println!("fn: read_storage, offset: {offset}, length: {length}");
+        log::debug!("read_storage, offset: {offset}, length: {length}");
         let first_page = offset / PAGE_SIZE;
         let last_page = (offset + length) / PAGE_SIZE;
         let mut data = Vec::new();
@@ -60,6 +72,7 @@ impl StorageFile {
     }
 
     pub fn write_storage(&mut self, offset: u32, data: &[u8]) -> Result<()> {
+        log::debug!("write_storage, offset: {offset}, length: {}", data.len());
         let length = data.len() as u32;
         let first_page = offset / PAGE_SIZE;
         let last_page = (offset + length) / PAGE_SIZE;
@@ -92,16 +105,13 @@ impl StorageFile {
     }
 
     fn read_page(&mut self, page_no: u32) -> Result<&mut Page> {
-        log::debug!("fn: read_page, page_no: {page_no}");
+        log::debug!("read_page, page_no: {page_no}");
         let offset = page_no * PAGE_SIZE;
 
         let page = match self.pages.entry(page_no) {
             Entry::Occupied(o) => o.into_mut(),
             Entry::Vacant(v) => {
-                log::debug!(
-                    "Try to read the storage. offset: {offset}, page_size: {}",
-                    PAGE_SIZE
-                );
+                log::debug!("try to read the storage. offset: {offset}");
 
                 self.file.seek(SeekFrom::Start(offset as u64))?;
                 let mut buf = vec![0; PAGE_SIZE as usize];
@@ -124,7 +134,8 @@ impl StorageFile {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage_file::StorageFile;
+    use super::*;
+    use quickcheck_macros::quickcheck;
     use tempfile::NamedTempFile;
 
     #[test]
@@ -146,7 +157,26 @@ mod tests {
         let data = vec![1, 2, 3];
         storage_file.write_storage(3, &data).unwrap();
 
-        let expected = storage_file.read_storage(3, 3).expect("Reading failed");
+        let expected = storage_file.read_storage(3, 3).unwrap();
+        assert_eq!(data, expected);
+    }
+
+    #[quickcheck]
+    fn prop_test_read_write(mut offset: u32, mut length: u32, mut data: Vec<u8>) {
+        offset %= PAGE_SIZE;
+        length %= PAGE_SIZE;
+        data.truncate(length as usize);
+
+        let size_in_mb = ((offset + data.len() as u32) / PAGE_SIZE) + 1;
+        let tmpfile = NamedTempFile::new().unwrap();
+        let tmpfile_path = tmpfile.path().to_str().unwrap();
+        let mut storage_file = StorageFile::create(tmpfile_path, size_in_mb).unwrap();
+
+        storage_file.write_storage(offset, &data).unwrap();
+
+        let expected = storage_file
+            .read_storage(offset, data.len() as u32)
+            .unwrap();
         assert_eq!(data, expected);
     }
 }
