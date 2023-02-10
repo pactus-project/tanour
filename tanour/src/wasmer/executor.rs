@@ -235,8 +235,7 @@ mod tests {
         memory_limit_page: u32,
         metering_limit: u64,
     ) -> Result<WasmerExecutor> {
-        // TODO: better code!?
-        let owner = [0; 21];
+        let owner = rand::random();
         let created_at = 1;
         let valid_until = 1000;
         let code = wat::parse_str(wat).unwrap();

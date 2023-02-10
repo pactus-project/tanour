@@ -6,11 +6,10 @@ use tanour::{
 use test_contract::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};
 
 fn make_test_contract(wat: &[u8], memory_limit_page: u32, metering_limit: u64) -> Contract {
-    // TODO: better code!?
     let code = wat::parse_bytes(wat).unwrap().to_vec();
-    let address = [1; 21]; // TODO!
-    let owner = [0; 21]; // TODO!
-    let valid_until = 1000;
+    let address = rand::random();
+    let owner = rand::random();
+    let valid_until = rand::random();
     let temp_dir = tempfile::tempdir().unwrap();
     let params = Params {
         memory_limit_page,

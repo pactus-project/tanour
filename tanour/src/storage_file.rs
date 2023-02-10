@@ -9,6 +9,8 @@ use std::{
     io::{Read, Seek, SeekFrom},
 };
 
+const PAGE_SIZE: u32 = 1024 * 1024; // 1 MB
+
 #[derive(Debug, Clone)]
 #[repr(C)]
 struct Header {
@@ -23,7 +25,6 @@ struct Header {
     reserved: [u8; 84],
 }
 
-const PAGE_SIZE: u32 = 1024 * 1024; // 1 MB
 pub struct StorageFile {
     file: File,
     header: Header,
@@ -198,7 +199,7 @@ impl StorageFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{address_from_hex, random_address};
+    use crate::address_from_hex;
     use quickcheck_macros::quickcheck;
     use tempfile::NamedTempFile;
 
@@ -244,7 +245,7 @@ mod tests {
 
     #[test]
     fn test_bad_offset() {
-        let owner = random_address();
+        let owner = rand::random();
         let created_at = 1;
         let valid_until = 1000;
         let tmpfile = NamedTempFile::new().unwrap();
@@ -282,7 +283,7 @@ mod tests {
 
     fn do_prop_test_read_write(offset: u32, data: Vec<u8>, code: Vec<u8>) {
         let size_in_mb = ((offset + code.len() as u32 + data.len() as u32) / PAGE_SIZE) + 2;
-        let owner = random_address();
+        let owner = rand::random();
         let created_at = 1;
         let valid_until = 1000;
         let tmpfile = NamedTempFile::new().unwrap();
