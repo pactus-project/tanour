@@ -7,7 +7,8 @@
 - Adding query API
 - Updating Kelk version to 0.3.0 in test-contract
 - Updating Wasmer version to 3.1.0
-- Creating a dedicated Storage file for the contracts
+- Creating a dedicated Storage file per contracts with a dedicated size
+- Loading contract's code from the storage file
 
 ## 0.1.0
 

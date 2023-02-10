@@ -19,11 +19,11 @@ fn make_test_contract(wat: &[u8], memory_limit_page: u32, metering_limit: u64) -
     };
 
     let mut blockchain_api = Box::new(MockBlockchainAPI::new());
-    blockchain_api.expect_current_block_no().returning(|| 1);
+    blockchain_api.expect_current_block_number().returning(|| 1);
     Contract::create(
         blockchain_api,
         &address,
-        1,
+        4,
         valid_until,
         owner,
         &code,

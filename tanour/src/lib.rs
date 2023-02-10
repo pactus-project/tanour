@@ -8,13 +8,14 @@ mod page;
 mod provider;
 mod storage_file;
 mod wasmer;
+#[cfg(test)]
+use rand::prelude::*;
 
 pub const ADDRESS_SIZE: usize = 21;
 
 pub type Address = [u8; ADDRESS_SIZE];
-pub type Hash32 = [u8; 32];
 
-#[allow(dead_code)]
+#[cfg(test)]
 pub fn address_from_hex(s: &str) -> Address {
     let mut addr: Address = [0u8; ADDRESS_SIZE];
     let src = &hex::decode(s).unwrap();
@@ -24,4 +25,10 @@ pub fn address_from_hex(s: &str) -> Address {
 
 pub fn address_to_hex(addr: &Address) -> String {
     hex::encode(addr)
+}
+
+#[cfg(test)]
+pub fn random_address() -> Address {
+    let mut rng = rand::thread_rng();
+    rng.gen()
 }

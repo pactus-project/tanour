@@ -51,7 +51,8 @@ impl StorageFile {
 
         let code_offset = std::mem::size_of::<Header>() as u32;
         let code_length = code.len() as u32;
-        let data_offset = code_offset + code_length + (128 - (code_length % 128));
+        let data_offset =
+            code_offset + code_length + (PAGE_SIZE - (code_offset + code_length % PAGE_SIZE));
 
         let header = Header {
             bom: 0x7374,
@@ -110,8 +111,11 @@ impl StorageFile {
 
     pub fn read_storage(&mut self, offset: u32, length: u32) -> Result<Vec<u8>> {
         log::debug!("read_storage, offset: {offset}, length: {length}");
+        if length == 0 {
+            return Ok(Vec::new());
+        }
         let first_page = offset / PAGE_SIZE;
-        let last_page = (offset + length) / PAGE_SIZE;
+        let last_page = (offset + length - 1) / PAGE_SIZE;
         let mut data = Vec::new();
         let mut read_offset = offset % PAGE_SIZE;
         let mut read_length = 0;
@@ -135,8 +139,11 @@ impl StorageFile {
     pub fn write_storage(&mut self, offset: u32, data: &[u8]) -> Result<()> {
         log::debug!("write_storage, offset: {offset}, length: {}", data.len());
         let length = data.len() as u32;
+        if length == 0 {
+            return Ok(());
+        }
         let first_page = offset / PAGE_SIZE;
-        let last_page = (offset + length) / PAGE_SIZE;
+        let last_page = (offset + length - 1) / PAGE_SIZE;
         let mut write_length = 0;
         let page_size = PAGE_SIZE;
         let mut page_start_offset = offset % page_size;
@@ -174,7 +181,8 @@ impl StorageFile {
             Entry::Vacant(v) => {
                 log::debug!("try to read the storage. offset: {offset}");
 
-                self.file.seek(SeekFrom::Start(offset as u64))?;
+                self.file
+                    .seek(SeekFrom::Start((self.header.data_offset + offset) as u64))?;
                 let mut buf = vec![0; PAGE_SIZE as usize];
                 self.file.read_exact(&mut buf)?;
 
@@ -190,6 +198,7 @@ impl StorageFile {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{address_from_hex, random_address};
     use quickcheck_macros::quickcheck;
     use tempfile::NamedTempFile;
 
@@ -199,50 +208,83 @@ mod tests {
     }
 
     #[test]
-    fn test_read() {
-        // TODO: better code
-        let owner = [0; 21];
-        let created_at = 1;
-        let valid_until = 1000;
-        let code = vec![1, 2, 3, 4];
+    fn test_header() {
+        let owner = address_from_hex("0102030405060708090a0b0c0d0e0f101112131415");
+        let created_at = 0x12345678;
+        let valid_until = 0x87654321;
         let tmpfile = NamedTempFile::new().unwrap();
         let tmpfile_path = tmpfile.path().to_str().unwrap();
+        let code = vec![1, 2, 3, 4];
         let mut storage_file =
-            StorageFile::create(tmpfile_path, 1, owner, created_at, valid_until, &code).unwrap();
+            StorageFile::create(tmpfile_path, 2, owner, created_at, valid_until, &code).unwrap();
 
-        let data = storage_file.read_storage(3, 12).unwrap();
-        assert_eq!(data, vec![0; 12]);
+        let mut buffer = [0u8; std::mem::size_of::<Header>()];
+        storage_file.file.rewind().unwrap();
+        storage_file.file.read_exact(&mut buffer).unwrap();
+
+        assert_eq!(
+            buffer,
+            [
+                0x74, 0x73, // bom
+                1,    // version
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                21, // owner
+                0x78, 0x56, 0x34, 0x12, // created_at
+                0x21, 0x43, 0x65, 0x87, // valid_until
+                128, 0, 0, 0, // code_offset
+                4, 0, 0, 0, // code_length
+                0, 0, 16, 0, // data_offset
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0 // reserved
+            ]
+        );
     }
 
     #[test]
-    fn test_write() {
-        let owner = [0; 21];
+    fn test_bad_offset() {
+        let owner = random_address();
         let created_at = 1;
         let valid_until = 1000;
-        let code = vec![1, 2, 3, 4];
         let tmpfile = NamedTempFile::new().unwrap();
         let tmpfile_path = tmpfile.path().to_str().unwrap();
+        let code = vec![1, 2, 3, 4];
         let mut storage_file =
-            StorageFile::create(tmpfile_path, 1, owner, created_at, valid_until, &code).unwrap();
+            StorageFile::create(tmpfile_path, 2, owner, created_at, valid_until, &code).unwrap();
 
-        let data = vec![1, 2, 3];
-        storage_file.write_storage(3, &data).unwrap();
+        storage_file.write_storage(0, &[1]).unwrap();
+        assert_eq!(storage_file.read_storage(0, 1).unwrap(), vec![1]);
 
-        let expected = storage_file.read_storage(3, 3).unwrap();
-        assert_eq!(data, expected);
+        storage_file.write_storage(PAGE_SIZE - 1, &[1]).unwrap();
+        assert_eq!(
+            storage_file.read_storage(PAGE_SIZE - 1, 1).unwrap(),
+            vec![1]
+        );
+
+        assert!(storage_file.write_storage(PAGE_SIZE, &[1]).is_err());
+        assert!(storage_file.read_storage(PAGE_SIZE, 1).is_err());
     }
 
     #[quickcheck]
-    fn prop_test_read_write(mut offset: u32, mut length: u32, mut data: Vec<u8>) {
+    fn test_empty_data() {
+        do_prop_test_read_write(0, vec![], vec![]);
+    }
+
+    #[quickcheck]
+    fn prop_test_read_write(mut offset: u32, mut length: u32, mut data: Vec<u8>, code: Vec<u8>) {
         offset %= PAGE_SIZE;
         length %= PAGE_SIZE;
         data.truncate(length as usize);
 
-        let size_in_mb = ((offset + data.len() as u32) / PAGE_SIZE) + 1;
-        let owner = [0; 21];
+        do_prop_test_read_write(offset, data, code);
+    }
+
+    fn do_prop_test_read_write(offset: u32, data: Vec<u8>, code: Vec<u8>) {
+        let size_in_mb = ((offset + code.len() as u32 + data.len() as u32) / PAGE_SIZE) + 2;
+        let owner = random_address();
         let created_at = 1;
         let valid_until = 1000;
-        let code = vec![1, 2, 3, 4];
         let tmpfile = NamedTempFile::new().unwrap();
         let tmpfile_path = tmpfile.path().to_str().unwrap();
         let mut storage_file = StorageFile::create(

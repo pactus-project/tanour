@@ -24,13 +24,13 @@ pub struct Params {
 }
 
 pub struct Contract {
-    /// Wasm executor
+    // Wasm executor
     executor: Box<dyn Executor>,
-    /// State of the contract
+    // State of the contract
     _state: Arc<Mutex<Provider>>,
-    /// internal buffer for decoding messages
+    // internal buffer for decoding messages, because minicbor is zero-copy.
     buffer: Vec<u8>,
-    /// Contract's address
+    // Contract's address
     _address: Address,
 }
 
@@ -44,14 +44,14 @@ impl Contract {
         code: &[u8],
         params: Params,
     ) -> Result<Self> {
-        let current_block_no = blockchain_api.current_block_no();
+        let created_at = blockchain_api.current_block_number();
         let file_path = Path::new(&params.storage_path)
             .join(format!("{}.storage", crate::address_to_hex(address)));
         let storage_file = StorageFile::create(
             file_path.to_str().unwrap(), // TODO: no unwrap
             storage_size_in_mb,
             owner,
-            current_block_no,
+            created_at,
             valid_until,
             code,
         )?;
