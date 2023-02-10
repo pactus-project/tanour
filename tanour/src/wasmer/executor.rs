@@ -224,24 +224,27 @@ impl executor::Executor for WasmerExecutor {
 }
 
 #[cfg(test)]
-pub(crate) mod tests {
+mod tests {
+    use super::*;
+    use crate::{blockchain_api::MockBlockchainAPI, storage_file::StorageFile};
     use tempfile::NamedTempFile;
     use wasmer::Pages;
 
-    use crate::{blockchain_api::MockBlockchainAPI, storage_file::StorageFile};
-
-    use super::*;
-
-    pub(crate) fn make_test_wasmer(
+    fn make_test_wasmer(
         wat: &str,
         memory_limit_page: u32,
         metering_limit: u64,
     ) -> Result<WasmerExecutor> {
+        // TODO: better code!?
+        let owner = [0; 21];
+        let created_at = 1;
+        let valid_until = 1000;
         let code = wat::parse_str(wat).unwrap();
         let blockchain_api = MockBlockchainAPI::new();
         let tmpfile = NamedTempFile::new().unwrap();
         let tmpfile_path = tmpfile.path().to_str().unwrap();
-        let storage_file = StorageFile::create(tmpfile_path, 1).unwrap();
+        let storage_file =
+            StorageFile::create(tmpfile_path, 1, owner, created_at, valid_until, &code).unwrap();
         let provider = Arc::new(Mutex::new(Provider::new(
             Box::new(blockchain_api),
             storage_file,

@@ -1,36 +1,47 @@
 use crate::{
-    error::{Error, Result},
+    error::{Result},
     page::Page,
+    Address,
 };
 use std::{
     collections::{hash_map::Entry, HashMap},
     io::Write,
+    mem::transmute,
 };
 use std::{
     fs::{File, OpenOptions},
     io::{Read, Seek, SeekFrom},
 };
 
+#[derive(Debug, Clone)]
+#[repr(C)]
+struct Header {
+    bom: u16,
+    version: u8,
+    owner: Address,
+    created_at: u32,
+    valid_until: u32,
+    code_offset: u32,
+    data_offset: u32,
+    reserved: [u8; 88],
+}
+
 const PAGE_SIZE: u32 = 1024 * 1024; // 1 MB
 pub struct StorageFile {
     file: File,
+    header: Header,
     pages: HashMap<u32, Page>,
 }
 
-// #[repr(C)]
-// struct Header {
-//     bom: u16,
-//     version: u8,
-//     owner: Address,
-//     created_at: u32,
-//     valid_until: u32,
-//     code_offset: u32,
-//     data_offset: u32,
-//     reserved: [u8; 68],
-// }
-
 impl StorageFile {
-    pub fn create(file_path: &str, file_size_in_mb: u32) -> Result<Self> {
+    pub fn create(
+        file_path: &str,
+        file_size_in_mb: u32,
+        owner: Address,
+        created_at: u32,
+        valid_until: u32,
+        code: &[u8],
+    ) -> Result<Self> {
         let file_size = file_size_in_mb * PAGE_SIZE;
         let mut file = OpenOptions::new()
             .read(true)
@@ -41,8 +52,52 @@ impl StorageFile {
         let zeros = vec![0; file_size as usize];
         file.write_all(&zeros)?;
 
+        let code_offset = std::mem::size_of::<Header>() as u32;
+        let code_len = code.len() as u32;
+        let data_offset = code_offset + code_len + (128 - (code_len % 128));
+
+        let header = Header {
+            bom: 0x7374,
+            version: 1,
+            owner,
+            created_at,
+            valid_until,
+            code_offset,
+            data_offset,
+            reserved: [0; 88],
+        };
+
+        file.rewind()?;
+        unsafe {
+            let p_bytes = transmute::<Header, [u8; std::mem::size_of::<Header>()]>(header.clone());
+            file.write_all(&p_bytes)?;
+        }
+
+        file.seek(SeekFrom::Start(code_offset as u64))?;
+        file.write_all(code)?;
+
         Ok(Self {
             file,
+            header,
+            pages: HashMap::new(),
+        })
+    }
+
+    pub fn load(file_path: &str) -> Result<Self> {
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(false)
+            .open(file_path)?;
+
+        let mut buffer = [0u8; std::mem::size_of::<Header>()];
+        file.read_exact(&mut buffer)?;
+        let header =
+            unsafe { std::mem::transmute::<[u8; std::mem::size_of::<Header>()], Header>(buffer) };
+
+        Ok(Self {
+            file,
+            header,
             pages: HashMap::new(),
         })
     }
@@ -115,13 +170,7 @@ impl StorageFile {
 
                 self.file.seek(SeekFrom::Start(offset as u64))?;
                 let mut buf = vec![0; PAGE_SIZE as usize];
-                let size = self.file.read(&mut buf)?;
-                if size != buf.len() {
-                    return Err(Error::IOError(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "unable to read whole buffer",
-                    )));
-                }
+                self.file.read_exact(&mut buf)?;
 
                 let page = Page::new(offset, PAGE_SIZE, buf);
                 v.insert(page)
@@ -139,10 +188,21 @@ mod tests {
     use tempfile::NamedTempFile;
 
     #[test]
+    fn test_header_size() {
+        assert_eq!(128, std::mem::size_of::<Header>());
+    }
+
+    #[test]
     fn test_read() {
+        // TODO: better code
+        let owner = [0; 21];
+        let created_at = 1;
+        let valid_until = 1000;
+        let code = vec![1, 2, 3, 4];
         let tmpfile = NamedTempFile::new().unwrap();
         let tmpfile_path = tmpfile.path().to_str().unwrap();
-        let mut storage_file = StorageFile::create(tmpfile_path, 1).unwrap();
+        let mut storage_file =
+            StorageFile::create(tmpfile_path, 1, owner, created_at, valid_until, &code).unwrap();
 
         let data = storage_file.read_storage(3, 12).unwrap();
         assert_eq!(data, vec![0; 12]);
@@ -150,9 +210,14 @@ mod tests {
 
     #[test]
     fn test_write() {
+        let owner = [0; 21];
+        let created_at = 1;
+        let valid_until = 1000;
+        let code = vec![1, 2, 3, 4];
         let tmpfile = NamedTempFile::new().unwrap();
         let tmpfile_path = tmpfile.path().to_str().unwrap();
-        let mut storage_file = StorageFile::create(tmpfile_path, 1).unwrap();
+        let mut storage_file =
+            StorageFile::create(tmpfile_path, 1, owner, created_at, valid_until, &code).unwrap();
 
         let data = vec![1, 2, 3];
         storage_file.write_storage(3, &data).unwrap();
@@ -168,9 +233,21 @@ mod tests {
         data.truncate(length as usize);
 
         let size_in_mb = ((offset + data.len() as u32) / PAGE_SIZE) + 1;
+        let owner = [0; 21];
+        let created_at = 1;
+        let valid_until = 1000;
+        let code = vec![1, 2, 3, 4];
         let tmpfile = NamedTempFile::new().unwrap();
         let tmpfile_path = tmpfile.path().to_str().unwrap();
-        let mut storage_file = StorageFile::create(tmpfile_path, size_in_mb).unwrap();
+        let mut storage_file = StorageFile::create(
+            tmpfile_path,
+            size_in_mb,
+            owner,
+            created_at,
+            valid_until,
+            &code,
+        )
+        .unwrap();
 
         storage_file.write_storage(offset, &data).unwrap();
 

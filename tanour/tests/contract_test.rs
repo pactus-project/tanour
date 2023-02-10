@@ -5,19 +5,37 @@ use tanour::{
 };
 use test_contract::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};
 
+fn make_test_contract(wat: &[u8], memory_limit_page: u32, metering_limit: u64) -> Contract {
+    // TODO: better code!?
+    let code = wat::parse_bytes(wat).unwrap().to_vec();
+    let address = [1; 21]; // TODO!
+    let owner = [0; 21]; // TODO!
+    let valid_until = 1000;
+    let temp_dir = tempfile::tempdir().unwrap();
+    let params = Params {
+        memory_limit_page,
+        metering_limit,
+        storage_path: temp_dir.path().to_str().unwrap().to_string(),
+    };
+
+    let mut blockchain_api = Box::new(MockBlockchainAPI::new());
+    blockchain_api.expect_current_block_no().returning(|| 1);
+    Contract::create(
+        blockchain_api,
+        &address,
+        1,
+        valid_until,
+        owner,
+        &code,
+        params,
+    )
+    .unwrap()
+}
+
 #[test]
 fn test_call_process() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
-    let code = wat::parse_bytes(wat).unwrap().to_vec();
-    let address = [0; 21]; // TODO!
-    let temp_dir = tempfile::tempdir().unwrap();
-    let params = Params {
-        memory_limit_page: 16,
-        metering_limit: 100000,
-        storage_path: temp_dir.path().to_str().unwrap().to_string(),
-    };
-    let blockchain_api = Box::new(MockBlockchainAPI::new());
-    let mut contract = Contract::create(blockchain_api, &address, 1, &code, params).unwrap();
+    let mut contract = make_test_contract(wat, 16, 10000);
 
     let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 
@@ -30,17 +48,7 @@ fn test_call_process() {
 #[test]
 fn test_read_write_storage() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
-    let code = wat::parse_bytes(wat).unwrap().to_vec();
-    let address = [0; 21]; // TODO!
-    let temp_dir = tempfile::tempdir().unwrap();
-    let params = Params {
-        memory_limit_page: 16,
-        metering_limit: 100000,
-        storage_path: temp_dir.path().to_str().unwrap().to_string(),
-    };
-    let blockchain_api = Box::new(MockBlockchainAPI::new());
-    let mut contract = Contract::create(blockchain_api, &address, 1, &code, params).unwrap();
-
+    let mut contract = make_test_contract(wat, 16, 100000);
     let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 
     let msg = "hello world!".to_string();
@@ -56,16 +64,7 @@ fn test_read_write_storage() {
 #[test]
 fn test_hash_blake2b() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
-    let code = wat::parse_bytes(wat).unwrap().to_vec();
-    let address = [0; 21]; // TODO!
-    let temp_dir = tempfile::tempdir().unwrap();
-    let params = Params {
-        memory_limit_page: 16,
-        metering_limit: 100000,
-        storage_path: temp_dir.path().to_str().unwrap().to_string(),
-    };
-    let blockchain_api = Box::new(MockBlockchainAPI::new());
-    let mut contract = Contract::create(blockchain_api, &address, 1, &code, params).unwrap();
+    let mut contract = make_test_contract(wat, 16, 100000);
 
     let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 

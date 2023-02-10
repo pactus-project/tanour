@@ -39,12 +39,22 @@ impl Contract {
         blockchain_api: Box<dyn BlockchainAPI>,
         address: &Address,
         storage_size_in_mb: u32,
+        valid_until: u32,
+        owner: Address,
         code: &[u8],
         params: Params,
     ) -> Result<Self> {
+        let current_block_no = blockchain_api.current_block_no();
         let file_path = Path::new(&params.storage_path)
             .join(format!("{}.storage", crate::address_to_hex(address)));
-        let storage_file = StorageFile::create(file_path.to_str().unwrap(), storage_size_in_mb)?;
+        let storage_file = StorageFile::create(
+            file_path.to_str().unwrap(),
+            storage_size_in_mb,
+            owner,
+            current_block_no,
+            valid_until,
+            code,
+        )?;
         let state = Arc::new(Mutex::new(Provider::new(blockchain_api, storage_file)));
         let executor = wasmer::WasmerExecutor::new(
             code,
