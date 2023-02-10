@@ -48,7 +48,7 @@ impl Contract {
         let file_path = Path::new(&params.storage_path)
             .join(format!("{}.storage", crate::address_to_hex(address)));
         let storage_file = StorageFile::create(
-            file_path.to_str().unwrap(),
+            file_path.to_str().unwrap(), // TODO: no unwrap
             storage_size_in_mb,
             owner,
             current_block_no,
@@ -71,23 +71,30 @@ impl Contract {
         })
     }
 
-    // pub fn load(
-    //     provider: P,
-    //     address: &Address,
-    //     params: Params,
-    // ) -> Result<Self> {
+    pub fn load(
+        blockchain_api: Box<dyn BlockchainAPI>,
+        address: &Address,
+        params: Params,
+    ) -> Result<Self> {
+        let file_path = Path::new(&params.storage_path)
+            .join(format!("{}.storage", crate::address_to_hex(address)));
+        let mut storage_file = StorageFile::load(file_path.to_str().unwrap())?;
+        let code = storage_file.read_code()?;
+        let state = Arc::new(Mutex::new(Provider::new(blockchain_api, storage_file)));
+        let executor = wasmer::WasmerExecutor::new(
+            &code,
+            params.memory_limit_page,
+            params.metering_limit,
+            state.clone(),
+        )?;
 
-    //     let state = Arc::new(Mutex::new(State::new(provider, PAGE_SIZE)));
-    //     let executor =
-    //         wasmer::WasmerExecutor::new(code, memory_limit_page, metering_limit, state.clone())?;
-
-    //     Ok(Contract {
-    //         executor: Box::new(executor),
-    //         _state: state,
-    //         buffer: Vec::new(),
-    //         address: address.clone(),
-    //     })
-    // }
+        Ok(Contract {
+            executor: Box::new(executor),
+            _state: state,
+            buffer: Vec::new(),
+            _address: *address,
+        })
+    }
 
     fn call_exported_fn<'a, E: Encode<()>, D: Decode<'a, ()>>(
         &'a mut self,

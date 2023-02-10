@@ -1,8 +1,4 @@
-use crate::{
-    error::{Result},
-    page::Page,
-    Address,
-};
+use crate::{error::Result, page::Page, Address};
 use std::{
     collections::{hash_map::Entry, HashMap},
     io::Write,
@@ -22,8 +18,9 @@ struct Header {
     created_at: u32,
     valid_until: u32,
     code_offset: u32,
+    code_length: u32,
     data_offset: u32,
-    reserved: [u8; 88],
+    reserved: [u8; 84],
 }
 
 const PAGE_SIZE: u32 = 1024 * 1024; // 1 MB
@@ -53,8 +50,8 @@ impl StorageFile {
         file.write_all(&zeros)?;
 
         let code_offset = std::mem::size_of::<Header>() as u32;
-        let code_len = code.len() as u32;
-        let data_offset = code_offset + code_len + (128 - (code_len % 128));
+        let code_length = code.len() as u32;
+        let data_offset = code_offset + code_length + (128 - (code_length % 128));
 
         let header = Header {
             bom: 0x7374,
@@ -63,8 +60,9 @@ impl StorageFile {
             created_at,
             valid_until,
             code_offset,
+            code_length,
             data_offset,
-            reserved: [0; 88],
+            reserved: [0; 84],
         };
 
         file.rewind()?;
@@ -100,6 +98,14 @@ impl StorageFile {
             header,
             pages: HashMap::new(),
         })
+    }
+
+    pub fn read_code(&mut self) -> Result<Vec<u8>> {
+        let mut code = vec![0u8; self.header.code_length as usize];
+        self.file
+            .seek(SeekFrom::Start(self.header.code_offset as u64))?;
+        self.file.read_exact(&mut code)?;
+        Ok(code)
     }
 
     pub fn read_storage(&mut self, offset: u32, length: u32) -> Result<Vec<u8>> {
