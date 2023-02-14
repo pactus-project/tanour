@@ -11,19 +11,18 @@ struct Transaction {
   value @1: UInt64;
   gas @2: UInt64;
   gasPrice @3: UInt64;
+  address @4: Data;
   action: union{
     instantiate: group {
-      code @4: Data;
-      salt @5: Data;
+      code @5: Data;
+      storageSize @6: UInt32;
+      validUntil @7: UInt32;
+      owner @8: Data;
     }
-    process: group {
-      address @6: Data;
-    }
-    query: group {
-      address @7: Data;
-    }
+    process @9: Void;
+    query @10: Void;
   }
-  args @8: Data;
+  args @11: Data;
 }
 
 struct ResultData {

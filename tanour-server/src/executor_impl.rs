@@ -1,12 +1,12 @@
-use crate::provider_adaptor::ProviderAdaptor;
+use crate::adaptor::BlockchainAdaptor;
 use crate::tanour_capnp;
 use crate::tanour_capnp::executor;
 use capnp::capability::Promise;
 use capnp::Error;
 use capnp_rpc::pry;
 use log::debug;
-use tanour::contract::Contract;
-use tanour::{contract, Address};
+use tanour::contract::{Contract, Params};
+use tanour::{address_from_bytes, contract, Address};
 use tokio::sync::oneshot;
 use tokio::sync::oneshot::error::TryRecvError;
 
@@ -43,16 +43,9 @@ use tokio::sync::oneshot::error::TryRecvError;
 //     }
 // }
 
-pub struct ExecutorImpl {}
-
-impl ExecutorImpl {
-    pub fn new() -> Self {
-        ExecutorImpl {}
-    }
-}
+pub struct ExecutorImpl;
 
 unsafe impl Send for tanour_capnp::provider::Client {}
-//unsafe impl Sync for tanour_capnp::provider::Client {}
 
 impl executor::Server for ExecutorImpl {
     fn execute(
@@ -60,67 +53,89 @@ impl executor::Server for ExecutorImpl {
         params: executor::ExecuteParams,
         mut results: executor::ExecuteResults,
     ) -> Promise<(), Error> {
-        let provider_client = pry!(pry!(params.get()).get_provider());
-        let transaction = pry!(pry!(params.get()).get_transaction());
-        match pry!(transaction.get_action().which()) {
-            tanour_capnp::transaction::action::Instantiate(reader) => {}
-            tanour_capnp::transaction::action::Process(reader) => {
-                pry!(reader.get_address());
+        let (tx, mut rx) = oneshot::channel();
 
-                let mut adaptor = ProviderAdaptor::new(provider_client);
+        let a = tokio::task::spawn_local(async move {
+            let provider_client = pry!(pry!(params.get()).get_provider());
+            let transaction = pry!(pry!(params.get()).get_transaction());
+            let mut adaptor = BlockchainAdaptor::new(provider_client);
 
-                // let contract = Contract::new(provider, code, memory_limit_page, metering_limit)
-            }
-            tanour_capnp::transaction::action::Query(reader) => {}
-        };
+            match pry!(transaction.get_action().which()) {
+                tanour_capnp::transaction::action::Instantiate(reader) => {
+                    let msg = pry!(transaction.get_args());
+                    let address = address_from_bytes(pry!(transaction.get_address()));
+                    let owner = address_from_bytes(pry!(reader.get_owner()));
+                    let code = pry!(reader.get_code());
+                    let storage_size = reader.get_storage_size();
+                    let valid_until = reader.get_valid_until();
+                    let params1 = Params {
+                        memory_limit_page: 1000,
+                        metering_limit: 11100,
+                        storage_path: ".".to_string(),
+                    };
 
-        //let (tx, mut rx) = oneshot::channel();
+                    let contract = tanour::contract::Contract::create(
+                        Box::new(adaptor),
+                        &address,
+                        storage_size,
+                        valid_until,
+                        owner,
+                        code,
+                        params1,
+                    )
+                    .unwrap(); // TODO:
 
-        // tokio::task::spawn(async move {
-        //     debug!("provider: {:?}", std::thread::current().id());
-        //     let mut adaptor = ProviderAdaptor::new(provider_client);
+                   // contract.call_instantiate(msg.clone()).unwrap();
+                }
+                tanour_capnp::transaction::action::Process(reader) => {
+                    todo!()
+                }
+                tanour_capnp::transaction::action::Query(reader) => {
+                    todo!()
+                }
+            };
 
-        //    // let result = tanour::execute::execute(&mut adaptor, &transaction).unwrap();
+            debug!("provider: {:?}", std::thread::current().id());
 
-        //    // tx.send(result).unwrap();
-        // });
+            tx.send(1).unwrap();
+            return Promise::<(), Error>::ok(());
+        });
         debug!("executor: {:?}", std::thread::current().id());
 
-        todo!();
-        // Promise::from_future(async move {
-        //     loop {
-        //         let msg = rx.try_recv();
-        //         match msg {
-        //             Err(TryRecvError::Empty) => {}
-        //             Err(e) => {
-        //                 return Err(Error::failed(format!("{}", e)));
-        //             }
-        //             Ok(result_data) => {
-        //                 tokio::time::delay_for(std::time::Duration::from_millis(10 as u64)).await;
+        return Promise::from_future(async move {
+            loop {
+                let msg = rx.try_recv();
+                match msg {
+                    Err(TryRecvError::Empty) => {}
+                    Err(e) => {
+                        return Err(Error::failed(format!("{}", e)));
+                    }
+                    Ok(result_data) => {
+                        tokio::time::delay_for(std::time::Duration::from_millis(10 as u64)).await;
 
-        //                 let mut tmp = Vec::new();
-        //                 tmp.resize(32, 0);
+                        let mut tmp = Vec::new();
+                        tmp.resize(32, 0);
 
-        //                 let mut builder = results.get().get_result_data().unwrap();
+                        let mut builder = results.get().get_result_data().unwrap();
 
-        //                 result_data.gas_left.to_little_endian(&mut tmp);
-        //                 builder.set_gas_left(&tmp);
-        //                 builder.set_data(&result_data.data);
-        //                 builder.set_contract(&result_data.contract.as_bytes());
+                        // result_data.gas_left.to_little_endian(&mut tmp);
+                        // builder.set_gas_left(0);
+                        // builder.set_data(&result_data.data);
+                        // builder.set_contract(&result_data.contract.as_bytes());
 
-        //                 // TODO: Implement it later
-        //                 //builder.set_logs();
+                        // TODO: Implement it later
+                        //builder.set_logs();
 
-        //                 break;
-        //             }
-        //         };
+                        break;
+                    }
+                };
 
-        //         //print!(".");
-        //         tokio::task::yield_now().await;
-        //         //tokio::time::delay_for(std::time::Duration::from_millis(10 as u64)).await;
-        //     }
+                //print!(".");
+                tokio::task::yield_now().await;
+                //tokio::time::delay_for(std::time::Duration::from_millis(10 as u64)).await;
+            }
 
-        //     Ok(())
-        // })
+            Ok(())
+        });
     }
 }

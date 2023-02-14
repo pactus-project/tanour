@@ -1,83 +1,45 @@
-use std::sync::Arc;
 use crate::tanour_capnp;
 use async_std::sync::Mutex;
 use log::debug;
-use tanour::provider_api::ProviderAPI;
+use std::sync::Arc;
+use tanour::{blockchain_api::BlockchainAPI, Address};
 
-pub struct ProviderAdaptor {
+pub struct BlockchainAdaptor {
     client: tanour_capnp::provider::Client,
 }
 
-impl ProviderAdaptor {
+impl BlockchainAdaptor {
     pub fn new(client: tanour_capnp::provider::Client) -> Self {
-        ProviderAdaptor { client }
+        BlockchainAdaptor { client }
     }
 }
 
-impl ProviderAPI for ProviderAdaptor {
-    fn read_storage(&self, offset: u32, length: u32) -> tanour::error::Result<Vec<u8>> {
-        todo!();
-        // let req = self.client.read_storage_request();
-        // req.get().set_filename(&self.filename);
-        // req.get().set_offset(offset);
-        // req.get().set_length(length);
+impl BlockchainAPI for BlockchainAdaptor {
+    fn exist(&self, _address: &Address) -> Result<bool, tanour::error::Error> {
+        //     let mut request = self.client.exist_request();
+        //     {
+        //         request.get().set_address(address.as_bytes());
+        //     }
 
-        // let handle = async move {
-        //     debug!("Try ot call `read_storage` method in client");
+        //     let handle = async move {
+        //         debug!("Try ot call `exist` method in client");
+        //         let result = request.send().promise.await?;
+        //         let exist = result.get()?.get_exist();
 
-        //     // let result = req.send().promise.await?;
-        //     // let res = result.get()?.get_value()?;
+        //         Ok(exist)
 
-        //     // res
-        // };
-
-        //futures::executor::block_on(handle).map_err(|e: Error| e.into())
-        //futures::executor::block_on(handle)
+        //    };
+        //     let ret: Result<bool, ::capnp::Error> = futures::executor::block_on(handle);
+        //     match ret {
+        //         Ok(exist) => exist,
+        //         Err(_) => false,
+        //     }
         todo!()
     }
 
-    fn write_storage(&mut self, offset: u32, data: &[u8]) -> tanour::error::Result<()> {
-        todo!();
-        // let req = self.client.write_storage_request();
-        // req.get().set_filename(&self.filename);
-        // req.get().set_offset(offset);
-        // req.get().set_value(data);
-
-        // let handle = async move {
-        //     debug!("Try ot call `write_storage` method in client");
-        //     //let result = req.send().promise.await?;
-        //     // let res = result.get()?;
-
-        //     // res
-        // };
-
-        //futures::executor::block_on(handle).map_err(|e: Error| e.into())
+    fn current_block_number(&self) -> u32 {
         todo!()
     }
-
-    fn query(&self, query: &[u8]) -> tanour::error::Result<Vec<u8>> {
-        todo!()
-    }
-
-    // fn exist(&self, address: &Address) -> bool {
-    //     let mut request = self.client.exist_request();
-    //     {
-    //         request.get().set_address(address.as_bytes());
-    //     }
-
-    //     let handle = async move {
-    //         debug!("Try ot call `exist` method in client");
-    //         let result = request.send().promise.await?;
-    //         let exist = result.get()?.get_exist();
-
-    //         Ok(exist)
-    //     };
-    //     let ret: Result<bool, ::capnp::Error> = futures::executor::block_on(handle);
-    //     match ret {
-    //         Ok(exist) => exist,
-    //         Err(_) => false,
-    //     }
-    // }
 
     // fn account(&self, address: &Address) -> Result<StateAccount, tanour::error::Error> {
     //     let mut request = self.client.account_request();
