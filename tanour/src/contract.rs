@@ -45,7 +45,7 @@ impl Contract {
             code,
             params.memory_limit_page,
             params.metering_limit,
-            provider.clone(),
+            state.clone(),
         )?;
 
         Ok(Contract {

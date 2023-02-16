@@ -18,7 +18,6 @@ pub fn address_from_bytes(d: &[u8]) -> Address {
     addr
 }
 
-
 #[cfg(test)]
 pub fn address_from_hex(s: &str) -> Address {
     let mut addr: Address = [0u8; ADDRESS_SIZE];

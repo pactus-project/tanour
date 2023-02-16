@@ -1,8 +1,10 @@
 use crate::tanour_capnp;
-use async_std::sync::Mutex;
+
 use log::debug;
-use std::sync::Arc;
+
 use tanour::{blockchain_api::BlockchainAPI, Address};
+
+unsafe impl Send for tanour_capnp::provider::Client {}
 
 pub struct BlockchainAdaptor {
     client: tanour_capnp::provider::Client,
@@ -15,26 +17,17 @@ impl BlockchainAdaptor {
 }
 
 impl BlockchainAPI for BlockchainAdaptor {
-    fn exist(&self, _address: &Address) -> Result<bool, tanour::error::Error> {
-        //     let mut request = self.client.exist_request();
-        //     {
-        //         request.get().set_address(address.as_bytes());
-        //     }
+    fn exist(&self, address: &Address) -> Result<bool, tanour::error::Error> {
+        let mut request = self.client.exists_request();
+        request.get().set_address(address);
 
-        //     let handle = async move {
-        //         debug!("Try ot call `exist` method in client");
-        //         let result = request.send().promise.await?;
-        //         let exist = result.get()?.get_exist();
+        let handle = async move {
+            debug!("Try ot call `exists` method in client");
+            let result = request.send().promise.await.unwrap(); //TODO: no unwrap
+            result.get().unwrap().get_exist() //TODO: no unwrap
+        };
 
-        //         Ok(exist)
-
-        //    };
-        //     let ret: Result<bool, ::capnp::Error> = futures::executor::block_on(handle);
-        //     match ret {
-        //         Ok(exist) => exist,
-        //         Err(_) => false,
-        //     }
-        todo!()
+        Ok(futures::executor::block_on(handle))
     }
 
     fn current_block_number(&self) -> u32 {
