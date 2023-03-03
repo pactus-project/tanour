@@ -1,7 +1,6 @@
 use super::compile;
 use super::memory;
 use super::native::*;
-
 use crate::error::{Error, Result};
 use crate::executor;
 use crate::memory::Pointer;
@@ -22,7 +21,7 @@ pub struct ResultData {
 
 #[derive(Clone)]
 pub(super) struct Env {
-    pub provider: Arc<Mutex<Provider>>,
+    pub provider: Arc<Mutex<dyn Provider>>,
     pub memory: Option<Memory>,
 }
 
@@ -43,7 +42,7 @@ impl WasmerExecutor {
         code: &[u8],
         memory_limit_page: u32,
         metering_limit: u64,
-        provider: Arc<Mutex<Provider>>,
+        provider: Arc<Mutex<dyn Provider>>,
     ) -> Result<Self> {
         let (module, store) = compile::compile(code, memory_limit_page, metering_limit)?;
         let store_lock = Arc::new(Mutex::new(store));
@@ -226,8 +225,8 @@ impl executor::Executor for WasmerExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{blockchain_api::MockBlockchainAPI, storage_file::StorageFile};
-    use tempfile::NamedTempFile;
+    use crate::blockchain_api::MockBlockchainAPI;
+    use crate::provider::MockProvider;
     use wasmer::Pages;
 
     fn make_test_wasmer(
@@ -235,19 +234,9 @@ mod tests {
         memory_limit_page: u32,
         metering_limit: u64,
     ) -> Result<WasmerExecutor> {
-        let owner = rand::random();
-        let created_at = 1;
-        let valid_until = 1000;
         let code = wat::parse_str(wat).unwrap();
-        let blockchain_api = MockBlockchainAPI::new();
-        let tmpfile = NamedTempFile::new().unwrap();
-        let tmpfile_path = tmpfile.path().to_str().unwrap();
-        let storage_file =
-            StorageFile::create(tmpfile_path, 1, owner, created_at, valid_until, &code).unwrap();
-        let provider = Arc::new(Mutex::new(Provider::new(
-            Box::new(blockchain_api),
-            storage_file,
-        )));
+        let _blockchain_api = MockBlockchainAPI::new();
+        let provider = Arc::new(Mutex::new(MockProvider::new()));
         WasmerExecutor::new(&code, memory_limit_page, metering_limit, provider)
     }
 
