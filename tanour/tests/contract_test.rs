@@ -8,27 +8,19 @@ use test_contract::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp}
 fn make_test_contract(wat: &[u8], memory_limit_page: u32, metering_limit: u64) -> Contract {
     let code = wat::parse_bytes(wat).unwrap().to_vec();
     let address = rand::random();
-    let owner = rand::random();
-    let valid_until = rand::random();
-    let temp_dir = tempfile::tempdir().unwrap();
     let params = Params {
         memory_limit_page,
         metering_limit,
-        storage_path: temp_dir.path().to_str().unwrap().to_string(),
     };
 
-    let mut blockchain_api = Box::new(MockBlockchainAPI::new());
-    blockchain_api.expect_current_block_number().returning(|| 1);
-    Contract::create(
-        blockchain_api,
-        &address,
-        4,
-        valid_until,
-        owner,
-        &code,
-        params,
-    )
-    .unwrap()
+    let mut api = Box::new(MockBlockchainAPI::new());
+    api.expect_read_storage().returning(|_, len| {
+        let mut d = Vec::new();
+        d.resize(len as usize, 0);
+        Ok(d)
+    });
+
+    Contract::new(api, &address, &code, params).unwrap()
 }
 
 #[test]

@@ -15,7 +15,7 @@ wasmer = { version = "3.1", default-features = false, features = [
 wasmer-middlewares = "3.1"
 thiserror = "1.0"
 hex = "0.4"
-loupe = "0.1"
+# loupe = "0.1"
 minicbor = { version = "0.18", features = ["std"] }
 mockall = "0.10"
 
@@ -25,7 +25,6 @@ wat = "1"
 test_contract = { path = "../test-contract" }
 blake2 = "0.9"
 hex-literal = "0.3"
-tempfile = "3.3"
 quickcheck = "1"
 quickcheck_macros = "1"
 rand = "0.8"

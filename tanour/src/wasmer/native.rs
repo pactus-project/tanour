@@ -43,10 +43,10 @@ pub(super) fn native_get_param(
     _ptr: u32,
     _len: u32,
 ) -> Result<u32> {
-    let address = [0; 21]; // TODO:
-    let env = func_env.data();
+    let _address = [0; 21]; // TODO:
+    let _env = func_env.data();
 
-    env.provider.lock().unwrap().exist(&address)?;
+    // env.provider.lock().unwrap().exist(&address)?;
 
     Ok(0)
 }

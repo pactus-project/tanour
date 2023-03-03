@@ -6,7 +6,6 @@ mod executor;
 mod memory;
 mod page;
 mod provider;
-mod storage_file;
 mod wasmer;
 
 pub const ADDRESS_SIZE: usize = 21;
