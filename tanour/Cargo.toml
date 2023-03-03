@@ -15,7 +15,6 @@ wasmer = { version = "3.1", default-features = false, features = [
 wasmer-middlewares = "3.1"
 thiserror = "1.0"
 hex = "0.4"
-# loupe = "0.1"
 minicbor = { version = "0.18", features = ["std"] }
 mockall = "0.10"
 
