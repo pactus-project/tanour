@@ -8,8 +8,6 @@ use minicbor::{Decode, Encode};
 
 use std::sync::{Arc, Mutex};
 
-const PAGE_SIZE: u32 = 1024 * 1024; // 1 kilobyte
-
 #[derive(Debug)]
 pub struct ResultData {
     pub gas_left: u64,
@@ -40,12 +38,12 @@ impl Contract {
         code: &[u8],
         params: Params,
     ) -> Result<Self> {
-        let provider = Arc::new(Mutex::new(ProviderAdaptor::new(api, PAGE_SIZE)));
+        let provider = Arc::new(Mutex::new(ProviderAdaptor::new(api)?));
         let executor = wasmer::WasmerExecutor::new(
             code,
             params.memory_limit_page,
             params.metering_limit,
-            state.clone(),
+            provider.clone(),
         )?;
 
         Ok(Contract {

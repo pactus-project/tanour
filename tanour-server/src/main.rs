@@ -47,9 +47,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 let rpc_system = RpcSystem::new(Box::new(network), Some(executor.clone().client));
                 tokio::task::spawn_local(Box::pin(
-                    rpc_system
-                        .map_err(|e| println!("error: {e:?}"))
-                        .map(|_| ()),
+                    rpc_system.map_err(|e| println!("error: {e:?}")).map(|_| ()),
                 ));
             }
         })

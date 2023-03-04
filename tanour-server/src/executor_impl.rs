@@ -29,26 +29,15 @@ impl executor::Server for ExecutorImpl {
                 tanour_capnp::transaction::action::Instantiate(reader) => {
                     let _msg = pry!(transaction.get_args());
                     let address = address_from_bytes(pry!(transaction.get_address()));
-                    let owner = address_from_bytes(pry!(reader.get_owner()));
                     let code = pry!(reader.get_code());
-                    let storage_size = reader.get_storage_size();
-                    let valid_until = reader.get_valid_until();
                     let params1 = Params {
                         memory_limit_page: 1000,
                         metering_limit: 11100,
-                        storage_path: ".".to_string(),
                     };
 
-                    let _contract = tanour::contract::Contract::create(
-                        Box::new(adaptor),
-                        &address,
-                        storage_size,
-                        valid_until,
-                        owner,
-                        code,
-                        params1,
-                    )
-                    .unwrap(); // TODO:
+                    let _contract =
+                        tanour::contract::Contract::new(Box::new(adaptor), &address, code, params1)
+                            .unwrap(); // TODO:
 
                     // contract.call_instantiate(msg.clone()).unwrap();
                 }
@@ -96,7 +85,7 @@ impl executor::Server for ExecutorImpl {
                 };
 
                 //print!(".");
-                tokio::task::yield_now().await;
+                //tokio::task::yield_now().await;
                 //tokio::time::delay_for(std::time::Duration::from_millis(10 as u64)).await;
             }
 

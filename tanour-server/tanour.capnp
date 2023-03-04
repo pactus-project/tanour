@@ -36,6 +36,9 @@ interface Executor {
 }
 
 interface Provider {
-  exists @0         ( address: Data                                     ) -> (exist: Bool);
-  account @1        ( address: Data                                     ) -> (account: Account);
+  pageSize @0       (                            ) -> (size: UInt32);
+  readPage @1       ( pageNo: UInt32             ) -> (data: Data);
+  writePage @2      ( pageNo: UInt32, data: Data ) -> ();
+  exists @3         ( address: Data              ) -> (exist: Bool);
+  account @4        ( address: Data              ) -> (account: Account);
 }

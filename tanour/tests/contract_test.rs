@@ -14,11 +14,8 @@ fn make_test_contract(wat: &[u8], memory_limit_page: u32, metering_limit: u64) -
     };
 
     let mut api = Box::new(MockBlockchainAPI::new());
-    api.expect_read_storage().returning(|_, len| {
-        let mut d = Vec::new();
-        d.resize(len as usize, 0);
-        Ok(d)
-    });
+    api.expect_page_size().returning(|| Ok(256));
+    api.expect_read_page().returning(|_| Ok(vec![0; 256]));
 
     Contract::new(api, &address, &code, params).unwrap()
 }
