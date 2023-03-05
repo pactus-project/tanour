@@ -8,6 +8,7 @@
 - Adding storage API to read from the storage file and write into storage file
 - Updating Kelk version to 0.3.0 in test-contract
 - Updating Wasmer version to 3.1.0
+- Refactoring Tanour Server to call Tanour executor using CapnProto APIs
 
 ## 0.1.0
 
