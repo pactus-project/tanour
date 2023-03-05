@@ -4,7 +4,6 @@ use crate::tanour_capnp::executor;
 use capnp::capability::Promise;
 use capnp::Error;
 use capnp_rpc::pry;
-use log::debug;
 use tanour::address_from_bytes;
 use tanour::contract::Params;
 use tokio::sync::oneshot;
@@ -12,6 +11,8 @@ use tokio::sync::oneshot::error::TryRecvError;
 
 pub struct ExecutorImpl;
 
+// TODO: ??? why ???
+#[allow(clippy::async_yields_async)]
 impl executor::Server for ExecutorImpl {
     fn execute(
         &mut self,
@@ -24,33 +25,30 @@ impl executor::Server for ExecutorImpl {
             let provider_client = pry!(pry!(params.get()).get_provider());
             let transaction = pry!(pry!(params.get()).get_transaction());
             let adaptor = BlockchainAdaptor::new(provider_client);
+            let msg = pry!(transaction.get_args());
+            let address = address_from_bytes(pry!(transaction.get_address()));
+            let code = pry!(transaction.get_code());
+            let params = Params {
+                memory_limit_page: 1000,
+                metering_limit: 11100,
+            };
 
-            match pry!(transaction.get_action().which()) {
-                tanour_capnp::transaction::action::Instantiate(reader) => {
-                    let msg = pry!(transaction.get_args());
-                    let address = address_from_bytes(pry!(transaction.get_address()));
-                    let code = pry!(reader.get_code());
-                    let params1 = Params {
-                        memory_limit_page: 1000,
-                        metering_limit: 11100,
-                    };
+            let mut contract =
+                tanour::contract::Contract::new(Box::new(adaptor), &address, code, params).unwrap(); // TODO: no unwrap
 
-                    let mut contract =
-                        tanour::contract::Contract::new(Box::new(adaptor), &address, code, params1)
-                            .unwrap(); // TODO: no unwrap
-
-                    contract.call_instantiate(msg.clone()).unwrap();
+            let res = match pry!(transaction.get_action().which()) {
+                tanour_capnp::transaction::action::Instantiate(_) => {
+                    contract.call_instantiate(msg).unwrap() // TODO: no unwrap
                 }
-                tanour_capnp::transaction::action::Process(_reader) => {
-                    todo!()
+                tanour_capnp::transaction::action::Process(_) => {
+                    contract.call_process(msg).unwrap() // TODO: no unwrap
                 }
-                tanour_capnp::transaction::action::Query(_reader) => {
-                    todo!()
+                tanour_capnp::transaction::action::Query(_) => {
+                    contract.call_query(msg).unwrap() // TODO: no unwrap
                 }
             };
 
-
-            tx.send(1).unwrap();
+            tx.send(res).unwrap(); // TODO: no unwrap
             Promise::<(), Error>::ok(())
         });
 
@@ -62,29 +60,17 @@ impl executor::Server for ExecutorImpl {
                     Err(e) => {
                         return Err(Error::failed(format!("{e}")));
                     }
-                    Ok(_result_data) => {
+                    Ok(result_data) => {
                         tokio::time::delay_for(std::time::Duration::from_millis(10_u64)).await;
 
-                        let mut tmp = Vec::new();
-                        tmp.resize(32, 0);
-
-                        let _builder = results.get().get_result_data().unwrap();
-
-                        // result_data.gas_left.to_little_endian(&mut tmp);
-                        // builder.set_gas_left(0);
-                        // builder.set_data(&result_data.data);
-                        // builder.set_contract(&result_data.contract.as_bytes());
-
-                        // TODO: Implement it later
-                        //builder.set_logs();
+                        let mut builder = results.get().get_result_data().unwrap();
+                        builder.set_data(&result_data);
 
                         break;
                     }
                 };
 
-                //print!(".");
-                //tokio::task::yield_now().await;
-                //tokio::time::delay_for(std::time::Duration::from_millis(10 as u64)).await;
+                tokio::task::yield_now().await
             }
 
             Ok(())
