@@ -14,11 +14,8 @@ fn make_test_contract(wat: &[u8], memory_limit_page: u32, metering_limit: u64) -
     };
 
     let mut api = Box::new(MockBlockchainAPI::new());
-    api.expect_read_storage().returning(|_, len| {
-        let mut d = Vec::new();
-        d.resize(len as usize, 0);
-        Ok(d)
-    });
+    api.expect_page_size().returning(|| Ok(256));
+    api.expect_read_page().returning(|_| Ok(vec![0; 256]));
 
     Contract::new(api, &address, &code, params).unwrap()
 }
@@ -28,11 +25,13 @@ fn test_call_process() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
     let mut contract = make_test_contract(wat, 16, 10000);
 
-    let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
+    let arg = InstantiateMsg {};
+    let data = minicbor::to_vec(arg).unwrap();
+    contract.call_instantiate(&data).unwrap();
 
-    let msg = ProcMsg::Null;
-    let res: Result<(), Error> = contract.call_process(&msg).unwrap();
-    assert!(res.is_ok());
+    let arg = ProcMsg::Null;
+    let encoded_arg = minicbor::to_vec(arg).unwrap();
+    contract.call_process(&encoded_arg).unwrap();
     assert_eq!(contract.consumed_points().unwrap(), 9526);
 }
 
@@ -40,13 +39,26 @@ fn test_call_process() {
 fn test_read_write_storage() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
     let mut contract = make_test_contract(wat, 16, 100000);
-    let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
 
-    let msg = "hello world!".to_string();
-    let _: Result<(), Error> = contract.call_process(&ProcMsg::SetMessage { msg }).unwrap();
+    let arg = InstantiateMsg {};
+    let encoded_arg = minicbor::to_vec(arg).unwrap();
+    let encoded_res = contract.call_instantiate(&encoded_arg).unwrap();
+    let res = minicbor::decode::<Result<(), Error>>(&encoded_res).unwrap();
+    assert!(res.is_ok());
+
+    let arg = ProcMsg::SetMessage {
+        msg: "hello world!".to_string(),
+    };
+    let encoded_arg = minicbor::to_vec(arg).unwrap();
+    let encoded_res = contract.call_process(&encoded_arg).unwrap();
+    let res = minicbor::decode::<Result<(), Error>>(&encoded_res).unwrap();
+    assert!(res.is_ok());
     assert_eq!(contract.consumed_points().unwrap(), 12350);
 
-    let res: Result<QueryRsp, Error> = contract.call_query(&QueryMsg::GetMessage).unwrap();
+    let encoded_arg = QueryMsg::GetMessage;
+    let data = minicbor::to_vec(encoded_arg).unwrap();
+    let encoded_res = contract.call_query(&data).unwrap();
+    let res = minicbor::decode::<Result<QueryRsp, Error>>(&encoded_res).unwrap();
     assert_eq!(res.unwrap(), QueryRsp::String("hello world!".to_string()),);
     assert_eq!(contract.consumed_points().unwrap(), 18119);
     assert!(!contract.exhausted().unwrap());
@@ -57,10 +69,18 @@ fn test_hash_blake2b() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
     let mut contract = make_test_contract(wat, 16, 100000);
 
-    let _: Result<(), Error> = contract.call_instantiate(InstantiateMsg {}).unwrap();
+    let arg = InstantiateMsg {};
+    let encoded_arg = minicbor::to_vec(arg).unwrap();
+    let encoded_res = contract.call_instantiate(&encoded_arg).unwrap();
+    let res = minicbor::decode::<Result<(), Error>>(&encoded_res).unwrap();
+    assert!(res.is_ok());
 
-    let data = "zarb".as_bytes().to_vec();
-    let res: Result<QueryRsp, Error> = contract.call_query(&QueryMsg::Hasher { data }).unwrap();
+    let arg = QueryMsg::Hasher {
+        data: "zarb".as_bytes().to_vec(),
+    };
+    let encoded_arg = minicbor::to_vec(arg).unwrap();
+    let encoded_res = contract.call_query(&encoded_arg).unwrap();
+    let res = minicbor::decode::<Result<QueryRsp, Error>>(&encoded_res).unwrap();
     assert_eq!(
         res.unwrap(),
         QueryRsp::Data(

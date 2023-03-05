@@ -1,14 +1,14 @@
 pub mod tanour_capnp {
     include!(concat!(env!("OUT_DIR"), "/tanour_capnp.rs"));
 }
+mod adaptor;
 mod executor_impl;
-mod provider_adaptor;
 
 use capnp_rpc::{rpc_twoparty_capnp, twoparty, RpcSystem};
-use tanour_capnp::executor;
 use executor_impl::ExecutorImpl;
 use futures::{AsyncReadExt, FutureExt, TryFutureExt};
 use std::net::ToSocketAddrs;
+use tanour_capnp::executor;
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -30,7 +30,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::task::LocalSet::new()
         .run_until(async move {
             let mut listener = TcpListener::bind(&addr).await?;
-            let executor_impl = ExecutorImpl::new();
+            let executor_impl = ExecutorImpl {};
             let executor: executor::Client = capnp_rpc::new_client(executor_impl);
 
             loop {
@@ -47,9 +47,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 let rpc_system = RpcSystem::new(Box::new(network), Some(executor.clone().client));
                 tokio::task::spawn_local(Box::pin(
-                    rpc_system
-                        .map_err(|e| println!("error: {:?}", e))
-                        .map(|_| ()),
+                    rpc_system.map_err(|e| println!("error: {e:?}")).map(|_| ()),
                 ));
             }
         })

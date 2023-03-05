@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Install CapnProto
+        run: sudo apt-get install capnproto
+
       - name: Install Rust
         run: |
           rustup toolchain install nightly --component llvm-tools-preview rustfmt clippy

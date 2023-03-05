@@ -1,77 +1,56 @@
-use crate::provider_adaptor::ProviderAdaptor;
+use crate::adaptor::BlockchainAdaptor;
 use crate::tanour_capnp;
 use crate::tanour_capnp::executor;
 use capnp::capability::Promise;
 use capnp::Error;
 use capnp_rpc::pry;
-use log::debug;
-use primitive_types::{H256, U256};
-use tanour::Address;
+use tanour::address_from_bytes;
+use tanour::contract::Params;
 use tokio::sync::oneshot;
 use tokio::sync::oneshot::error::TryRecvError;
 
-impl<'a> From<tanour_capnp::transaction::Reader<'a>>
-    for Result<tanour::transaction::Transaction, Error>
-{
-    fn from(reader: tanour_capnp::transaction::Reader<'a>) -> Self {
-        let sender = Address::from_slice(reader.get_sender()?);
-        let value = U256::from_little_endian(reader.get_value()?);
-        let gas = U256::from_little_endian(reader.get_gas()?);
-        let gas_price = U256::from_little_endian(reader.get_gas_price()?);
-        let args = reader.get_args()?.to_vec();
-        let action = match reader.get_action().which()? {
-            tanour_capnp::transaction::action::Create(create) => {
-                let code = create.get_code()?.to_vec();
-                let salt = H256::from_slice(create.get_salt()?);
-                tanour::transaction::Action::Create(code, salt)
-            }
-            tanour_capnp::transaction::action::Call(call) => {
-                let address = Address::from_slice(call.get_address()?);
-                tanour::transaction::Action::Call(address)
-            }
-        };
+pub struct ExecutorImpl;
 
-        Ok(tanour::transaction::Transaction {
-            sender: sender,
-            value: value,
-            gas: gas,
-            gas_price: gas_price,
-            action: action,
-            args: args,
-        })
-    }
-}
-
-pub struct ExecutorImpl {}
-
-impl ExecutorImpl {
-    pub fn new() -> Self {
-        ExecutorImpl {}
-    }
-}
-
-unsafe impl Send for tanour_capnp::provider::Client {}
-//unsafe impl Sync for tanour_capnp::provider::Client {}
-
+// TODO: ??? why ???
+#[allow(clippy::async_yields_async)]
 impl executor::Server for ExecutorImpl {
     fn execute(
         &mut self,
         params: executor::ExecuteParams,
         mut results: executor::ExecuteResults,
     ) -> Promise<(), Error> {
-        let provider_client = pry!(pry!(params.get()).get_provider());
-        let transaction = pry!(pry!(pry!(params.get()).get_transaction()).into());
         let (tx, mut rx) = oneshot::channel();
 
-        tokio::task::spawn(async move {
-            debug!("provider: {:?}", std::thread::current().id());
-            let mut adaptor = ProviderAdaptor::new(provider_client);
+        tokio::task::spawn_local(async move {
+            let provider_client = pry!(pry!(params.get()).get_provider());
+            let transaction = pry!(pry!(params.get()).get_transaction());
+            let adaptor = BlockchainAdaptor::new(provider_client);
+            let msg = pry!(transaction.get_args());
+            let address = address_from_bytes(pry!(transaction.get_address()));
+            let code = pry!(transaction.get_code());
+            let params = Params {
+                memory_limit_page: 1000,
+                metering_limit: 11100,
+            };
 
-            let result = tanour::execute::execute(&mut adaptor, &transaction).unwrap();
+            let mut contract =
+                tanour::contract::Contract::new(Box::new(adaptor), &address, code, params).unwrap(); // TODO: no unwrap
 
-            tx.send(result).unwrap();
+            let res = match pry!(transaction.get_action().which()) {
+                tanour_capnp::transaction::action::Instantiate(_) => {
+                    contract.call_instantiate(msg).unwrap() // TODO: no unwrap
+                }
+                tanour_capnp::transaction::action::Process(_) => {
+                    contract.call_process(msg).unwrap() // TODO: no unwrap
+                }
+                tanour_capnp::transaction::action::Query(_) => {
+                    contract.call_query(msg).unwrap() // TODO: no unwrap
+                }
+            };
+
+            tx.send(res).unwrap(); // TODO: no unwrap
+            Promise::<(), Error>::ok(())
         });
-        debug!("executor: {:?}", std::thread::current().id());
 
         Promise::from_future(async move {
             loop {
@@ -79,31 +58,19 @@ impl executor::Server for ExecutorImpl {
                 match msg {
                     Err(TryRecvError::Empty) => {}
                     Err(e) => {
-                        return Err(Error::failed(format!("{}", e)));
+                        return Err(Error::failed(format!("{e}")));
                     }
                     Ok(result_data) => {
-                        tokio::time::delay_for(std::time::Duration::from_millis(10 as u64)).await;
-
-                        let mut tmp = Vec::new();
-                        tmp.resize(32, 0);
+                        tokio::time::delay_for(std::time::Duration::from_millis(10_u64)).await;
 
                         let mut builder = results.get().get_result_data().unwrap();
-
-                        result_data.gas_left.to_little_endian(&mut tmp);
-                        builder.set_gas_left(&tmp);
-                        builder.set_data(&result_data.data);
-                        builder.set_contract(&result_data.contract.as_bytes());
-
-                        // TODO: Implement it later
-                        //builder.set_logs();
+                        builder.set_data(&result_data);
 
                         break;
                     }
                 };
 
-                //print!(".");
-                tokio::task::yield_now().await;
-                //tokio::time::delay_for(std::time::Duration::from_millis(10 as u64)).await;
+                tokio::task::yield_now().await
             }
 
             Ok(())

@@ -18,8 +18,10 @@ pub trait Executor {
 
     // Get the remaining points (metering)
     fn remaining_points(&self) -> Result<u64>;
+
     // Get the consumed points (metering)
     fn consumed_points(&self) -> Result<u64>;
+
     // Check if all points are consumed (metering)
     fn exhausted(&self) -> Result<bool>;
 }

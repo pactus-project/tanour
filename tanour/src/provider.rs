@@ -20,12 +20,12 @@ pub struct ProviderAdaptor {
 }
 
 impl ProviderAdaptor {
-    pub fn new(api: Box<dyn BlockchainAPI>, page_size: u32) -> Self {
-        ProviderAdaptor {
-            api,
-            page_size,
+    pub fn new(api: Box<dyn BlockchainAPI>) -> Result<Self> {
+        Ok(ProviderAdaptor {
+            page_size: api.page_size()?,
             pages: HashMap::new(),
-        }
+            api,
+        })
     }
     fn read_page(&mut self, page_no: u32) -> Result<&mut Page> {
         println!("fn: read_page, page_no: {page_no}");
@@ -38,7 +38,7 @@ impl ProviderAdaptor {
                     "Try to read the storage. offset: {offset}, page_size: {}",
                     self.page_size
                 );
-                let bytes = self.api.read_storage(offset, self.page_size)?;
+                let bytes = self.api.read_page(page_no)?;
                 let page = Page::new(offset, self.page_size, bytes);
                 v.insert(page)
             }
