@@ -27,7 +27,7 @@ impl executor::Server for ExecutorImpl {
 
             match pry!(transaction.get_action().which()) {
                 tanour_capnp::transaction::action::Instantiate(reader) => {
-                    let _msg = pry!(transaction.get_args());
+                    let msg = pry!(transaction.get_args());
                     let address = address_from_bytes(pry!(transaction.get_address()));
                     let code = pry!(reader.get_code());
                     let params1 = Params {
@@ -35,11 +35,11 @@ impl executor::Server for ExecutorImpl {
                         metering_limit: 11100,
                     };
 
-                    let _contract =
+                    let mut contract =
                         tanour::contract::Contract::new(Box::new(adaptor), &address, code, params1)
-                            .unwrap(); // TODO:
+                            .unwrap(); // TODO: no unwrap
 
-                    // contract.call_instantiate(msg.clone()).unwrap();
+                    contract.call_instantiate(msg.clone()).unwrap();
                 }
                 tanour_capnp::transaction::action::Process(_reader) => {
                     todo!()
@@ -49,12 +49,10 @@ impl executor::Server for ExecutorImpl {
                 }
             };
 
-            debug!("provider: {:?}", std::thread::current().id());
 
             tx.send(1).unwrap();
             Promise::<(), Error>::ok(())
         });
-        debug!("executor: {:?}", std::thread::current().id());
 
         Promise::from_future(async move {
             loop {

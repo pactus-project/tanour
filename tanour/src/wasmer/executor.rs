@@ -124,8 +124,8 @@ impl executor::Executor for WasmerExecutor {
         let result = self.call_function(name, &[val])?;
 
         match result.first() {
-            Some(val) => Err(Error::RuntimeError {
-                msg: format!("Invalid return value for {name}: {val:?}"),
+            Some(_) => Err(Error::RuntimeError {
+                msg: format!("expecting no return value for {name}"),
             }),
             None => Ok(()),
         }
@@ -139,7 +139,7 @@ impl executor::Executor for WasmerExecutor {
             Some(val) => match val {
                 Value::I64(i64) => Ok(*i64 as u64),
                 _ => Err(Error::RuntimeError {
-                    msg: format!("Invalid return value for {name}"),
+                    msg: format!("expecting return value for {name}"),
                 }),
             },
             None => Err(Error::RuntimeError {

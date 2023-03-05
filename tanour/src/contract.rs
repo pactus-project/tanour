@@ -4,7 +4,6 @@ use crate::executor::Executor;
 use crate::memory::Pointer;
 use crate::provider::ProviderAdaptor;
 use crate::{wasmer, Address};
-use minicbor::{Decode, Encode};
 
 use std::sync::{Arc, Mutex};
 
@@ -54,43 +53,30 @@ impl Contract {
         })
     }
 
-    fn call_exported_fn<'a, E: Encode<()>, D: Decode<'a, ()>>(
-        &'a mut self,
-        msg: E,
-        fname: &str,
-    ) -> Result<D> {
-        let param_data = minicbor::to_vec(msg).map_err(|original| Error::SerializationError {
-            msg: format!("{original}"),
-        })?;
-        let size = param_data.len() as u32;
+    fn call_exported_fn<'a>(&'a mut self, fname: &str, data: &[u8]) -> Result<Vec<u8>> {
+        let size = data.len() as u32;
         let ptr_64 = self.allocate(size)?;
         let ptr = Pointer::from_u64(ptr_64);
-        self.executor.write_ptr(&ptr, &param_data)?;
+        self.executor.write_ptr(&ptr, &data)?;
 
         let res_ptr_64 = self.executor.call_fn_1(fname, ptr_64)?;
         self.deallocate(ptr_64)?;
 
         // Decoding result (result to pointer)
         let res_ptr = Pointer::from_u64(res_ptr_64);
-        self.buffer = self.executor.read_ptr(&res_ptr)?;
-        minicbor::decode(&self.buffer).map_err(|original| Error::SerializationError {
-            msg: format!("{original}"),
-        })
+        self.executor.read_ptr(&res_ptr)
     }
 
-    pub fn call_instantiate<'a, E: Encode<()>, D: Decode<'a, ()>>(
-        &'a mut self,
-        msg: E,
-    ) -> Result<D> {
-        self.call_exported_fn(msg, "instantiate")
+    pub fn call_instantiate<'a>(&'a mut self, encoded_arg: &[u8]) -> Result<Vec<u8>> {
+        self.call_exported_fn("instantiate", encoded_arg)
     }
 
-    pub fn call_process<'a, E: Encode<()>, D: Decode<'a, ()>>(&'a mut self, msg: E) -> Result<D> {
-        self.call_exported_fn(msg, "process")
+    pub fn call_process<'a>(&'a mut self, encoded_arg: &[u8]) -> Result<Vec<u8>> {
+        self.call_exported_fn("process", encoded_arg)
     }
 
-    pub fn call_query<'a, E: Encode<()>, D: Decode<'a, ()>>(&'a mut self, msg: E) -> Result<D> {
-        self.call_exported_fn(msg, "query")
+    pub fn call_query<'a>(&'a mut self, encoded_arg: &[u8]) -> Result<Vec<u8>> {
+        self.call_exported_fn("query", encoded_arg)
     }
 
     fn allocate(&self, size: u32) -> Result<u64> {
