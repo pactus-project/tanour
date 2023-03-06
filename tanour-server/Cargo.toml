@@ -16,17 +16,16 @@ capnpc = { git = "https://github.com/capnproto/capnproto-rust" }
 [dependencies]
 capnp = { git = "https://github.com/capnproto/capnproto-rust" }
 capnp-rpc = { git = "https://github.com/capnproto/capnproto-rust" }
-futures = "0.3.0"
-tokio = { version = "0.2.0", features = [
+futures = "0.3"
+tokio = { version = "1.26", features = [
     "time",
     "sync",
-    "rt-util",
-    "rt-core",
     "net",
     "macros",
+    "rt",
+    "rt-multi-thread",
 ] }
-tokio-util = { version = "0.3.0", features = ["compat"] }
-tanour = { version = "0.2.0" }
-async-std = "1.5.0"
+tokio-util = { version = "0.7", features = ["compat"] }
+tanour = { version = "0.2.0", path = "../tanour" }
 log = "0.4"
-simple_logger = "1.4.0"
+simple_logger = "4.0"

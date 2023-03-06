@@ -61,7 +61,7 @@ impl executor::Server for ExecutorImpl {
                         return Err(Error::failed(format!("{e}")));
                     }
                     Ok(result_data) => {
-                        tokio::time::delay_for(std::time::Duration::from_millis(10_u64)).await;
+                        tokio::time::sleep(std::time::Duration::from_millis(10_u64)).await;
 
                         let mut builder = results.get().get_result_data().unwrap();
                         builder.set_data(&result_data);
