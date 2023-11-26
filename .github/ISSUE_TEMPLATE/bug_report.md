@@ -29,5 +29,6 @@ Your additional work here is greatly appreciated and will help us respond as qui
 
 > Please provide the following:
 
-- **Operation System and Version**
-- **Tanour Version**
+- **Operation System and Version:**
+- **Rust Version:**
+- **Tanour Version:**
