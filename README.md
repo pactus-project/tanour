@@ -48,7 +48,7 @@ TODO
 
 Tanour requires **latest stable Rust version** to build. You can install Rust through [rustup](https://www.rustup.rs/).
 
-In order to use Tanour as a webservice you also need to install [Cap'n Proto](https://capnproto.org/install.html).
+In order to use Tanour as a Web service you also need to install [Cap'n Proto](https://capnproto.org/install.html).
 
 To build the Tanour from the source code, you can follow these commands:
 
