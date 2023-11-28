@@ -9,7 +9,7 @@ Tanour is a Contract actor executor for [Pactus](https://pactus.org/) blockchain
 Tanour can be launched as an independent and standalone process and it has no internal state.
 Interacting with the Pactus blockchain happens through the set of Provider APIs.
 
-![tanour-stateless](https://user-images.githubusercontent.com/8073510/133919171-0f5aea21-3f71-4b4b-99cd-465818b467d8.png)
+![tanour-stateless](https://github.com/pactus-project/tanour/assets/89645414/a3f312b5-ceef-48e7-be0f-2982f108f683)
 
 ### Actor model
 
@@ -48,7 +48,7 @@ TODO
 
 Tanour requires **latest stable Rust version** to build. You can install Rust through [rustup](https://www.rustup.rs/).
 
-In order to use Tanour as a webservice you also need to install [Cap'n Proto](https://capnproto.org/install.html).
+In order to use Tanour as a Web service you also need to install [Cap'n Proto](https://capnproto.org/install.html).
 
 To build the Tanour from the source code, you can follow these commands:
 
