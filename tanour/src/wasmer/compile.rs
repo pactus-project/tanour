@@ -3,8 +3,8 @@ use crate::error::{Error, Result};
 use log::debug;
 use std::sync::Arc;
 use wasmer::{
-    wasmparser::Operator, BaseTunables, CompilerConfig, EngineBuilder, Module, Pages, Singlepass,
-    Store, Target,
+    wasmparser::Operator, BaseTunables, CompilerConfig, EngineBuilder, Module, NativeEngineExt,
+    Pages, Singlepass, Store, Target,
 };
 use wasmer_middlewares::Metering;
 
@@ -26,8 +26,9 @@ pub fn compile(
 
     let base = BaseTunables::for_target(&Target::default());
     let tunables = LimitingTunables::new(base, Pages(memory_limit_page));
-    let store = Store::new_with_tunables(engine, tunables);
-    //let store = Store::default();
+    let store = Store::new(engine);
+    let store_engine = store.engine();
+    store_engine.to_owned().set_tunables(tunables);
 
     let module = Module::new(&store, code).map_err(|original| Error::CompileError {
         msg: format!("{original}"),
