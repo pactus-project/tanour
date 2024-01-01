@@ -1,4 +1,5 @@
 use hex_literal::hex;
+use rand::Rng;
 use tanour::{
     blockchain_api::MockBlockchainAPI,
     contract::{Contract, Params},
@@ -7,7 +8,7 @@ use test_contract::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp}
 
 fn make_test_contract(wat: &[u8], memory_limit_page: u32, metering_limit: u64) -> Contract {
     let code = wat::parse_bytes(wat).unwrap().to_vec();
-    let address = rand::random();
+    let address = rand::thread_rng().gen::<[u8; 21]>();
     let params = Params {
         memory_limit_page,
         metering_limit,

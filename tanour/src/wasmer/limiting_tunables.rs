@@ -125,8 +125,8 @@ impl<T: Tunables> Tunables for LimitingTunables<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wasmer::Singlepass;
     use wasmer::{imports, wat2wasm, BaseTunables, Instance, Memory, Module, Pages, Store, Target};
+    use wasmer::{NativeEngineExt, Singlepass};
 
     #[test]
     fn test_tunables_limit_memory() -> Result<(), Box<dyn std::error::Error>> {
@@ -148,7 +148,9 @@ mod tests {
         let tunables = LimitingTunables::new(base, Pages(24));
 
         // Create a store, that holds the engine and our custom tunables
-        let mut store = Store::new_with_tunables(compiler, tunables);
+        let mut store = Store::new(compiler);
+        let engine = store.engine();
+        engine.to_owned().set_tunables(tunables);
 
         println!("Compiling module...");
         let module = Module::new(&store, wasm_bytes)?;
