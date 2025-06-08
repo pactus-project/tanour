@@ -1,8 +1,9 @@
 ---
 name: Feature request
 about: Any new functionality for Tanour.
-title: ''
-labels: ''
+title: '[FEATURE]: '
+labels: '["enhancement"]'
+type: 'Feature'
 ---
 
 **Thank you in advance for helping us to improve Tanour!**
@@ -19,7 +20,7 @@ Your additional work here is greatly appreciated and will help us respond as qui
 
 ## Alternatives and current work-arounds
 
-> A clear and concise description of any alternatives you've considered or any work-arounds that are currently in place.
+> A clear and concise description of any alternatives you've considered or any workarounds that are currently in place.
 
 ### Additional context
 

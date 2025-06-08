@@ -1,9 +1,9 @@
 use crate::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};
-use blake2::digest::{Update, VariableOutput};
-use blake2::VarBlake2b;
-use kelk::context::Context;
-use kelk::kelk_entry;
-use kelk::storage::str::StorageString;
+use blake2::{
+    Blake2bVar,
+    digest::{Update, VariableOutput},
+};
+use kelk::{context::Context, kelk_entry, storage::str::StorageString};
 
 fn null(_ctx: Context) -> Result<(), Error> {
     Ok(())
@@ -22,8 +22,8 @@ fn get_message(ctx: Context) -> Result<String, Error> {
 }
 
 fn calc_hash(data: Vec<u8>) -> Result<Vec<u8>, Error> {
-    let mut hasher = VarBlake2b::new(32).unwrap();
-    hasher.update(data);
+    let mut hasher = Blake2bVar::new(32).unwrap();
+    Update::update(&mut hasher, &data);
     let res = hasher.finalize_boxed().to_vec();
 
     Ok(res)

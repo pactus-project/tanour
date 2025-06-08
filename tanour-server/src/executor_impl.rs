@@ -1,13 +1,8 @@
-use crate::adaptor::BlockchainAdaptor;
-use crate::tanour_capnp;
-use crate::tanour_capnp::executor;
-use capnp::capability::Promise;
-use capnp::Error;
+use crate::{adaptor::BlockchainAdaptor, tanour_capnp, tanour_capnp::executor};
+use capnp::{capability::Promise, Error};
 use capnp_rpc::pry;
-use tanour::address_from_bytes;
-use tanour::contract::Params;
-use tokio::sync::oneshot;
-use tokio::sync::oneshot::error::TryRecvError;
+use tanour::{address_from_bytes, contract::Params};
+use tokio::sync::{oneshot, oneshot::error::TryRecvError};
 
 pub struct ExecutorImpl;
 

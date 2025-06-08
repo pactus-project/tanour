@@ -1,8 +1,6 @@
-use crate::blockchain_api::BlockchainAPI;
-use crate::error::Result;
-use crate::page::Page;
+use crate::{blockchain_api::BlockchainAPI, error::Result, page::Page};
 
-use std::collections::{hash_map::Entry, HashMap};
+use std::collections::{HashMap, hash_map::Entry};
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
@@ -39,7 +37,7 @@ impl ProviderAdaptor {
                     self.page_size
                 );
                 let bytes = self.api.read_page(page_no)?;
-                let page = Page::new(offset, self.page_size, bytes);
+                let page = Page::new(bytes);
                 v.insert(page)
             }
         };

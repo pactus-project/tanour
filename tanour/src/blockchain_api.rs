@@ -1,4 +1,4 @@
-use crate::{error::Result, Address};
+use crate::{Address, error::Result};
 
 use mockall::{automock, predicate::*};
 

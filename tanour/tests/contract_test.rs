@@ -23,7 +23,7 @@ fn make_test_contract(wat: &[u8], memory_limit_page: u32, metering_limit: u64) -
 #[test]
 fn test_call_process() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
-    let mut contract = make_test_contract(wat, 16, 10000);
+    let mut contract = make_test_contract(wat, 32, 10000);
 
     let arg = InstantiateMsg {};
     let data = minicbor::to_vec(arg).unwrap();
@@ -32,13 +32,13 @@ fn test_call_process() {
     let arg = ProcMsg::Null;
     let encoded_arg = minicbor::to_vec(arg).unwrap();
     contract.call_process(&encoded_arg).unwrap();
-    assert_eq!(contract.consumed_points().unwrap(), 9526);
+    assert_eq!(contract.consumed_points().unwrap(), 6609);
 }
 
 #[test]
 fn test_read_write_storage() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
-    let mut contract = make_test_contract(wat, 16, 100000);
+    let mut contract = make_test_contract(wat, 32, 100000);
 
     let arg = InstantiateMsg {};
     let encoded_arg = minicbor::to_vec(arg).unwrap();
@@ -53,21 +53,21 @@ fn test_read_write_storage() {
     let encoded_res = contract.call_process(&encoded_arg).unwrap();
     let res = minicbor::decode::<Result<(), Error>>(&encoded_res).unwrap();
     assert!(res.is_ok());
-    assert_eq!(contract.consumed_points().unwrap(), 12350);
+    assert_eq!(contract.consumed_points().unwrap(), 8618);
 
     let encoded_arg = QueryMsg::GetMessage;
     let data = minicbor::to_vec(encoded_arg).unwrap();
     let encoded_res = contract.call_query(&data).unwrap();
     let res = minicbor::decode::<Result<QueryRsp, Error>>(&encoded_res).unwrap();
     assert_eq!(res.unwrap(), QueryRsp::String("hello world!".to_string()),);
-    assert_eq!(contract.consumed_points().unwrap(), 18119);
+    assert_eq!(contract.consumed_points().unwrap(), 13709);
     assert!(!contract.exhausted().unwrap());
 }
 
 #[test]
 fn test_hash_blake2b() {
     let wat = include_bytes!("../../test-contract/wasm/test_contract.wasm");
-    let mut contract = make_test_contract(wat, 16, 100000);
+    let mut contract = make_test_contract(wat, 32, 100000);
 
     let arg = InstantiateMsg {};
     let encoded_arg = minicbor::to_vec(arg).unwrap();
@@ -87,6 +87,6 @@ fn test_hash_blake2b() {
             hex!("12b38977f2d67f06f0c0cd54aaf7324cf4fee184398ea33d295e8d1543c2ee1a").to_vec()
         ),
     );
-    assert_eq!(contract.consumed_points().unwrap(), 28598);
+    assert_eq!(contract.consumed_points().unwrap(), 15869);
     assert!(!contract.exhausted().unwrap());
 }

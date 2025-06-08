@@ -1,13 +1,13 @@
 [package]
 name = "test_contract"
 version = "0.1.0"
-authors = ["Pactus blockchain <admin@pactus.org>"]
-edition = "2021"
+authors = ["Pactus blockchain <info@pactus.org>"]
+edition = "2024"
 
 [dependencies]
-kelk = { version = "0.3.0" }
-minicbor = { version = "0.18", features = ["derive"] }
-blake2 = "0.9"
+kelk = { version = "0.4.0", git = "https://github.com/pactus-project/kelk"}
+minicbor = { version = "1.0", features = ["derive"] }
+blake2 = "0.10"
 
 [lib]
 name = "test_contract"

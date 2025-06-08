@@ -19,7 +19,7 @@ jobs:
 
       - name: Install Rust
         run: |
-          rustup toolchain install nightly --component llvm-tools-preview rustfmt clippy
+          rustup toolchain install nightly --component llvm-tools-preview,rustfmt,clippy
           # Installing wasm32 target for compiling the test-contract
           rustup toolchain install nightly --target wasm32-unknown-unknown
 
@@ -27,7 +27,7 @@ jobs:
       - name: Compiling test-contract
         run: |
           cd test-contract
-          cargo +nightly build --target wasm32-unknown-unknown --release -Z unstable-options --out-dir ./wasm
+          cargo +nightly build --target wasm32-unknown-unknown --release -Z unstable-options --artifact-dir ./wasm
 
       - name: Install cargo-llvm-cov
         run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
@@ -36,13 +36,15 @@ jobs:
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v5
         with:
           files: lcov.info
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: fmt check
         run: cargo +nightly fmt --all -- --check
 
       - name: Clippy check
-        run: cargo +nightly clippy --all-targets --all-features -- -D warnings
+        # uninlined_format_args, because of capnp generated files
+        run: cargo +nightly clippy --all-targets --all-features -- -D warnings -A clippy::uninlined_format_args
