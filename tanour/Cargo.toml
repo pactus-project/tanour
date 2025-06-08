@@ -2,7 +2,7 @@
 description = "Tanour"
 name = "tanour"
 version = "0.2.0"
-authors = ["Pactus blockchain <admin@pactus.org>"]
+authors = ["Pactus blockchain <info@pactus.org>"]
 edition = "2024"
 
 [dependencies]
