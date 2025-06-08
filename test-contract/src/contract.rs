@@ -1,5 +1,5 @@
 use crate::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};
-use blake2::{Blake2s256, Digest, digest::Update};
+use blake2::{digest::{Update, VariableOutput}, Blake2bVar};
 use kelk::{context::Context, kelk_entry, storage::str::StorageString};
 
 fn null(_ctx: Context) -> Result<(), Error> {
@@ -19,9 +19,9 @@ fn get_message(ctx: Context) -> Result<String, Error> {
 }
 
 fn calc_hash(data: Vec<u8>) -> Result<Vec<u8>, Error> {
-    let mut hasher = Blake2s256::new();
+    let mut hasher = Blake2bVar::new(32).unwrap();
     Update::update(&mut hasher, &data);
-    let res = hasher.finalize().to_vec();
+    let res = hasher.finalize_boxed().to_vec();
 
     Ok(res)
 }
