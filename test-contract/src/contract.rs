@@ -1,5 +1,8 @@
 use crate::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};
-use blake2::{digest::{Update, VariableOutput}, Blake2bVar};
+use blake2::{
+    Blake2bVar,
+    digest::{Update, VariableOutput},
+};
 use kelk::{context::Context, kelk_entry, storage::str::StorageString};
 
 fn null(_ctx: Context) -> Result<(), Error> {
