@@ -1,8 +1,16 @@
 use std::ptr::NonNull;
 
 use wasmer::{
-    vm::{self, MemoryError, MemoryStyle, TableStyle, VMMemoryDefinition, VMTableDefinition},
-    MemoryType, Pages, TableType, Tunables,
+    MemoryError,
+    MemoryStyle,
+    MemoryType,
+    Pages,
+    TableStyle,
+    TableType,
+    sys::{
+        Tunables,
+        vm::{self, VMMemoryDefinition, VMTableDefinition},
+    },
 };
 
 /// A custom tunables that allows you to set a memory limit.
@@ -96,10 +104,12 @@ impl<T: Tunables> Tunables for LimitingTunables<T> {
         style: &MemoryStyle,
         vm_definition_location: NonNull<VMMemoryDefinition>,
     ) -> Result<vm::VMMemory, MemoryError> {
-        let adjusted = self.adjust_memory(ty);
-        self.validate_memory(&adjusted)?;
-        self.base
-            .create_vm_memory(&adjusted, style, vm_definition_location)
+        unsafe {
+            let adjusted = self.adjust_memory(ty);
+            self.validate_memory(&adjusted)?;
+            self.base
+                .create_vm_memory(&adjusted, style, vm_definition_location)
+        }
     }
 
     /// Create a table owned by the host given a [`TableType`] and a [`TableStyle`].
@@ -118,15 +128,24 @@ impl<T: Tunables> Tunables for LimitingTunables<T> {
         style: &TableStyle,
         vm_definition_location: NonNull<VMTableDefinition>,
     ) -> Result<vm::VMTable, String> {
-        self.base.create_vm_table(ty, style, vm_definition_location)
+        unsafe { self.base.create_vm_table(ty, style, vm_definition_location) }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wasmer::Singlepass;
-    use wasmer::{imports, wat2wasm, BaseTunables, Instance, Memory, Module, Pages, Store, Target};
+    use wasmer::{
+        Engine,
+        Instance,
+        Memory,
+        Module,
+        Pages,
+        Store,
+        imports,
+        sys::{BaseTunables, NativeEngineExt, Singlepass, Target},
+        wat2wasm,
+    };
 
     #[test]
     fn test_tunables_limit_memory() -> Result<(), Box<dyn std::error::Error>> {
@@ -140,15 +159,15 @@ mod tests {
 
         // Any compiler and any engine do the job here
         let compiler = Singlepass::default();
-        let _engine = Singlepass::new();
+        let mut engine: Engine = compiler.into();
 
         // Here is where the fun begins
-
         let base = BaseTunables::for_target(&Target::default());
         let tunables = LimitingTunables::new(base, Pages(24));
 
         // Create a store, that holds the engine and our custom tunables
-        let mut store = Store::new_with_tunables(compiler, tunables);
+        engine.set_tunables(tunables);
+        let mut store = Store::new(engine);
 
         println!("Compiling module...");
         let module = Module::new(&store, wasm_bytes)?;

@@ -17,7 +17,7 @@ capnpc = { git = "https://github.com/capnproto/capnproto-rust" }
 capnp = { git = "https://github.com/capnproto/capnproto-rust" }
 capnp-rpc = { git = "https://github.com/capnproto/capnproto-rust" }
 futures = "0.3"
-tokio = { version = "1.26", features = [
+tokio = { version = "1.45", features = [
     "time",
     "sync",
     "net",
@@ -28,4 +28,4 @@ tokio = { version = "1.26", features = [
 tokio-util = { version = "0.7", features = ["compat"] }
 tanour = { version = "0.2.0", path = "../tanour" }
 log = "0.4"
-simple_logger = "4.0"
+simple_logger = "5.0"

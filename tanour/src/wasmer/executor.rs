@@ -1,23 +1,13 @@
-use super::compile;
-use super::memory;
-use super::native::*;
-use crate::error::{Error, Result};
-use crate::executor;
-use crate::memory::Pointer;
-use crate::provider::Provider;
-use std::sync::Arc;
-use std::sync::Mutex;
-use wasmer::AsStoreRef;
-use wasmer::Memory;
-use wasmer::Store;
-use wasmer::{imports, AsStoreMut, Function, FunctionEnv, Value};
-use wasmer_middlewares::metering::{get_remaining_points, MeteringPoints};
-
-#[derive(Debug, Clone)]
-pub struct ResultData {
-    pub gas_left: u64,
-    pub data: Vec<u8>,
-}
+use super::{compile, memory, native::*};
+use crate::{
+    error::{Error, Result},
+    executor,
+    memory::Pointer,
+    provider::Provider,
+};
+use std::sync::{Arc, Mutex};
+use wasmer::{AsStoreMut, AsStoreRef, Function, FunctionEnv, Memory, Store, Value, imports};
+use wasmer_middlewares::metering::{MeteringPoints, get_remaining_points};
 
 #[derive(Clone)]
 pub(super) struct Env {
@@ -36,8 +26,8 @@ pub struct WasmerExecutor {
 impl WasmerExecutor {
     /// creates the new instance of WASMER executor
     /// `code` should be the wat byte codes
-    /// `memory_limit_page` is the maximum a linear memory is allowed to be (in Wasm pages, 64 KiB each).
-    /// `metering_limit` is the maximum operator that can be  executed in total.
+    /// `memory_limit_page` is the maximum a linear memory is allowed to be (in Wasm pages, 64 KiB
+    /// each). `metering_limit` is the maximum operator that can be  executed in total.
     pub fn new(
         code: &[u8],
         memory_limit_page: u32,
@@ -225,8 +215,7 @@ impl executor::Executor for WasmerExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::blockchain_api::MockBlockchainAPI;
-    use crate::provider::MockProvider;
+    use crate::{blockchain_api::MockBlockchainAPI, provider::MockProvider};
     use wasmer::Pages;
 
     fn make_test_wasmer(

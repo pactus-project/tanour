@@ -32,7 +32,7 @@ fn test_call_process() {
     let arg = ProcMsg::Null;
     let encoded_arg = minicbor::to_vec(arg).unwrap();
     contract.call_process(&encoded_arg).unwrap();
-    assert_eq!(contract.consumed_points().unwrap(), 9526);
+    assert_eq!(contract.consumed_points().unwrap(), 9084);
 }
 
 #[test]
@@ -53,14 +53,14 @@ fn test_read_write_storage() {
     let encoded_res = contract.call_process(&encoded_arg).unwrap();
     let res = minicbor::decode::<Result<(), Error>>(&encoded_res).unwrap();
     assert!(res.is_ok());
-    assert_eq!(contract.consumed_points().unwrap(), 12350);
+    assert_eq!(contract.consumed_points().unwrap(), 11727);
 
     let encoded_arg = QueryMsg::GetMessage;
     let data = minicbor::to_vec(encoded_arg).unwrap();
     let encoded_res = contract.call_query(&data).unwrap();
     let res = minicbor::decode::<Result<QueryRsp, Error>>(&encoded_res).unwrap();
     assert_eq!(res.unwrap(), QueryRsp::String("hello world!".to_string()),);
-    assert_eq!(contract.consumed_points().unwrap(), 18119);
+    assert_eq!(contract.consumed_points().unwrap(), 17197);
     assert!(!contract.exhausted().unwrap());
 }
 
@@ -87,6 +87,6 @@ fn test_hash_blake2b() {
             hex!("12b38977f2d67f06f0c0cd54aaf7324cf4fee184398ea33d295e8d1543c2ee1a").to_vec()
         ),
     );
-    assert_eq!(contract.consumed_points().unwrap(), 28598);
+    assert_eq!(contract.consumed_points().unwrap(), 30402);
     assert!(!contract.exhausted().unwrap());
 }
