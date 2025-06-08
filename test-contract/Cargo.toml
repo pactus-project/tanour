@@ -5,7 +5,7 @@ authors = ["Pactus blockchain <info@pactus.org>"]
 edition = "2024"
 
 [dependencies]
-kelk = { version = "0.3.0" }
+kelk = { version = "0.4.0", git = "https://github.com/pactus-project/kelk"}
 minicbor = { version = "1.0", features = ["derive"] }
 blake2 = "0.10"
 

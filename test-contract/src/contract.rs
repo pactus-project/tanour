@@ -1,9 +1,6 @@
 use crate::message::{Error, InstantiateMsg, ProcMsg, QueryMsg, QueryRsp};
-use blake2::digest::{DynDigest, Update};
-use kelk::context::Context;
-use kelk::kelk_entry;
-use kelk::storage::str::StorageString;
-use blake2::{ Blake2s256, Digest,};
+use blake2::{Blake2s256, Digest, digest::Update};
+use kelk::{context::Context, kelk_entry, storage::str::StorageString};
 
 fn null(_ctx: Context) -> Result<(), Error> {
     Ok(())
