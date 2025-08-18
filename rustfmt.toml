@@ -7,9 +7,6 @@ format_code_in_doc_comments = true
 # The granularity of imports. "Crate" means imports will be grouped by crate.
 imports_granularity = "Crate"
 
-# The layout of imports.
-# https://rust-lang.github.io/rustfmt/?version=v1.8.0&search=#imports_layout
-imports_layout = "HorizontalVertical"
 
 # Whether to wrap comments to fit within the specified comment width.
 wrap_comments = true

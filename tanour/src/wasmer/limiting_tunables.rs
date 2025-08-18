@@ -1,12 +1,7 @@
 use std::ptr::NonNull;
 
 use wasmer::{
-    MemoryError,
-    MemoryStyle,
-    MemoryType,
-    Pages,
-    TableStyle,
-    TableType,
+    MemoryError, MemoryStyle, MemoryType, Pages, TableStyle, TableType,
     sys::{
         Tunables,
         vm::{self, VMMemoryDefinition, VMTableDefinition},
@@ -104,9 +99,9 @@ impl<T: Tunables> Tunables for LimitingTunables<T> {
         style: &MemoryStyle,
         vm_definition_location: NonNull<VMMemoryDefinition>,
     ) -> Result<vm::VMMemory, MemoryError> {
+        let adjusted = self.adjust_memory(ty);
+        self.validate_memory(&adjusted)?;
         unsafe {
-            let adjusted = self.adjust_memory(ty);
-            self.validate_memory(&adjusted)?;
             self.base
                 .create_vm_memory(&adjusted, style, vm_definition_location)
         }
@@ -136,13 +131,7 @@ impl<T: Tunables> Tunables for LimitingTunables<T> {
 mod tests {
     use super::*;
     use wasmer::{
-        Engine,
-        Instance,
-        Memory,
-        Module,
-        Pages,
-        Store,
-        imports,
+        Engine, Instance, Memory, Module, Pages, Store, imports,
         sys::{BaseTunables, NativeEngineExt, Singlepass, Target},
         wat2wasm,
     };

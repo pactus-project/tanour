@@ -1,11 +1,6 @@
 use crate::{
-    Address,
-    blockchain_api::BlockchainAPI,
-    error::Result,
-    executor::Executor,
-    memory::Pointer,
-    provider::ProviderAdaptor,
-    wasmer,
+    Address, blockchain_api::BlockchainAPI, error::Result, executor::Executor, memory::Pointer,
+    provider::ProviderAdaptor, wasmer,
 };
 
 use std::sync::{Arc, Mutex};

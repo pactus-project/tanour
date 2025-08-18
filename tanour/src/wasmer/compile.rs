@@ -3,10 +3,7 @@ use crate::error::{Error, Result};
 use log::debug;
 use std::sync::Arc;
 use wasmer::{
-    Engine,
-    Module,
-    Pages,
-    Store,
+    Engine, Module, Pages, Store,
     sys::{BaseTunables, CompilerConfig, EngineBuilder, NativeEngineExt, Singlepass, Target},
     wasmparser::Operator,
 };

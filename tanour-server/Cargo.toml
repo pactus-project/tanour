@@ -17,7 +17,7 @@ capnpc = { git = "https://github.com/capnproto/capnproto-rust" }
 capnp = { git = "https://github.com/capnproto/capnproto-rust" }
 capnp-rpc = { git = "https://github.com/capnproto/capnproto-rust" }
 futures = "0.3"
-tokio = { version = "1.45", features = [
+tokio = { version = "1.47", features = [
     "time",
     "sync",
     "net",
