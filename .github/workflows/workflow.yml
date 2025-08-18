@@ -46,5 +46,4 @@ jobs:
         run: cargo +nightly fmt --all -- --check
 
       - name: Clippy check
-        # uninlined_format_args, because of capnp generated files
-        run: cargo +nightly clippy --all-targets --all-features -- -D warnings -A clippy::uninlined_format_args
+        run: cargo +nightly clippy --all-targets --all-features -- -D warnings

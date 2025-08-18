@@ -18,7 +18,7 @@ hex = "0.4"
 mockall = "0.13"
 
 [dev-dependencies]
-minicbor = { version = "1.0", features = ["std"] }
+minicbor = { version = "2.1", features = ["std"] }
 simple_logger = "5.0"
 wat = "1"
 test_contract = { path = "../test-contract" }
